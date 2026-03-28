@@ -1,0 +1,235 @@
+// SQLite locally; use PostgreSQL in production with the same models.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model FieldRole {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  users User[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  /// Login id (lowercase). Owner may also sign in with email until migrated.
+  username     String?  @unique
+  email        String   @unique
+  /// Owner login secret (bcrypt).
+  passwordHash String?
+  /// Field / retail 6-digit PIN (bcrypt).
+  pinHash      String?
+  name         String
+  phone        String?  @unique
+  role         String
+  shopId       String?
+  fieldRoleId  String?
+  fieldRole    FieldRole? @relation(fields: [fieldRoleId], references: [id], onDelete: SetNull)
+  bio          String?
+  createdAt    DateTime @default(now())
+
+  shop              Shop?            @relation(fields: [shopId], references: [id])
+  srInventory       SrInventory[]
+  deliveriesAsSR    ShopDelivery[]   @relation("DeliverySR")
+  paymentsCollected Payment[]        @relation("PaymentCollector")
+  paymentsSubmitted Payment[]        @relation("PaymentSubmitter")
+  paymentsCashReceived Payment[]     @relation("CashHandoverRecipient")
+  activityEvents    ActivityEvent[]
+  ordersPlaced      ShopOrder[]      @relation("OrderPlacedBy")
+  ordersAssigned    ShopOrder[]      @relation("OrderAssignedSR")
+  ordersFulfilled   ShopOrder[]      @relation("OrderFulfilledBySR")
+
+  @@index([shopId])
+  @@index([fieldRoleId])
+}
+
+model Shop {
+  id          String   @id @default(cuid())
+  name        String
+  ownerName   String
+  phone       String
+  address     String
+  creditLimit Decimal  @default(0)
+  createdAt   DateTime @default(now())
+
+  retailUsers User[]
+  deliveries ShopDelivery[]
+  payments   Payment[]
+  activities ActivityEvent[]
+  orders     ShopOrder[]
+}
+
+model Brand {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  products CatalogProduct[]
+}
+
+model CatalogProduct {
+  id           String   @id @default(cuid())
+  brandId      String?
+  brandRel     Brand?   @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  /// Denormalized brand label (kept in sync when brandId is set; supports legacy rows).
+  brand        String
+  name         String
+  description  String?
+  warehouseQty Int      @default(0)
+  unitPrice    Decimal
+  /// Your cost per unit (COGS); used for profit analytics.
+  unitCost     Decimal  @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  officeRow OfficeInventory?
+  srRows    SrInventory[]
+  lines      ShopDeliveryLine[]
+  orderLines ShopOrderLine[]
+
+  @@index([brandId])
+}
+
+/// Retail request for stock. Owner assigns an SR (store is on the order).
+model ShopOrder {
+  id             String    @id @default(cuid())
+  shopId         String
+  shop           Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  placedByUserId String?
+  placedBy       User?     @relation("OrderPlacedBy", fields: [placedByUserId], references: [id], onDelete: SetNull)
+  status         String    @default("OPEN")
+  assignedSrId   String?
+  assignedSr     User?     @relation("OrderAssignedSR", fields: [assignedSrId], references: [id], onDelete: SetNull)
+  /// Set when the order is completed (delivered or owner-complete) before clearing assignedSrId — for analytics.
+  fulfilledBySrId String?
+  fulfilledBy     User?     @relation("OrderFulfilledBySR", fields: [fulfilledBySrId], references: [id], onDelete: SetNull)
+  note               String?
+  ownerNote          String?
+  retailConfirmedAt  DateTime?
+  createdAt          DateTime  @default(now())
+  assignedAt     DateTime?
+  completedAt    DateTime?
+  cancelledAt    DateTime?
+
+  lines     ShopOrderLine[]
+  deliveries ShopDelivery[]
+
+  @@index([shopId])
+  @@index([status])
+  @@index([assignedSrId])
+  @@index([fulfilledBySrId])
+  @@index([cancelledAt])
+}
+
+model ShopOrderLine {
+  id           String         @id @default(cuid())
+  orderId      String
+  order        ShopOrder      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId    String
+  product      CatalogProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity     Int
+  /// How many units the assigned rep has already delivered to the store (adds to shop due).
+  deliveredQty Int            @default(0)
+  unitPrice    Decimal
+
+  @@index([orderId])
+}
+
+model OfficeInventory {
+  id        String         @id @default(cuid())
+  productId String         @unique
+  product   CatalogProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int            @default(0)
+}
+
+model SrInventory {
+  id        String         @id @default(cuid())
+  srId      String
+  sr        User           @relation(fields: [srId], references: [id], onDelete: Cascade)
+  productId String
+  product   CatalogProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int            @default(0)
+
+  @@unique([srId, productId])
+  @@index([srId])
+}
+
+model ShopDelivery {
+  id          String    @id @default(cuid())
+  shopId      String
+  shop        Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  srId        String
+  sr          User      @relation("DeliverySR", fields: [srId], references: [id], onDelete: Cascade)
+  orderId     String?
+  order       ShopOrder? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  status      String    @default("PENDING_RETAIL")
+  createdAt   DateTime  @default(now())
+  confirmedAt DateTime?
+
+  lines ShopDeliveryLine[]
+
+  @@index([shopId])
+  @@index([srId])
+  @@index([orderId])
+}
+
+model ShopDeliveryLine {
+  id         String         @id @default(cuid())
+  deliveryId String
+  delivery   ShopDelivery   @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  productId  String
+  product    CatalogProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity   Int
+  unitPrice  Decimal
+
+  @@index([deliveryId])
+}
+
+/// ONLINE = instant confirm; CASH_SR = SR collected cash, owner must approve; PROOF_BANK = shop uploaded proof;
+/// CASH_HAND_RETAIL = store handed cash to SR or owner (pending owner approval)
+model Payment {
+  id                String    @id @default(cuid())
+  shopId            String
+  shop              Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  amount            Decimal
+  method            String
+  status            String    @default("PENDING_OWNER")
+  note              String?
+  proofNote         String?
+  proofImageBase64  String?
+  collectedBySRId   String?
+  collectedBySR     User?     @relation("PaymentCollector", fields: [collectedBySRId], references: [id])
+  /// Who is holding cash from a retail in-hand payment until the owner approves.
+  receivedByUserId  String?
+  receivedBy        User?     @relation("CashHandoverRecipient", fields: [receivedByUserId], references: [id])
+  submittedByUserId String?
+  submittedBy       User?     @relation("PaymentSubmitter", fields: [submittedByUserId], references: [id])
+  createdAt         DateTime  @default(now())
+  reviewedAt        DateTime?
+
+  @@index([shopId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([receivedByUserId])
+}
+
+model ActivityEvent {
+  id          String   @id @default(cuid())
+  type        String
+  title       String
+  detail      String?
+  amount      Decimal?
+  actorUserId String
+  actor       User     @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
+  shopId      String?
+  shop        Shop?    @relation(fields: [shopId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}

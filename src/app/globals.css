@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #18181b;
+  --muted: #a1a1aa;
+  --border: #27272a;
+  --accent: #14b8a6;
+  --accent-foreground: #042f2e;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  overscroll-behavior-y: none;
+}
+
+@layer components {
+  .app-card {
+    @apply rounded-[1.25rem] border border-zinc-800 bg-zinc-900/80 p-4 shadow-lg backdrop-blur-sm sm:rounded-2xl;
+  }
+  .app-input {
+    @apply min-h-11 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-3 text-base text-white placeholder:text-zinc-600 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/25 sm:min-h-0 sm:py-2.5 sm:text-sm;
+  }
+  .app-btn {
+    @apply inline-flex min-h-12 min-w-11 touch-manipulation items-center justify-center rounded-xl bg-teal-600 px-4 py-3.5 text-base font-semibold text-white shadow-lg shadow-teal-900/20 transition hover:bg-teal-500 active:scale-[0.98] sm:min-h-0 sm:py-3 sm:text-sm;
+  }
+  .app-btn-secondary {
+    @apply inline-flex min-h-12 min-w-11 touch-manipulation items-center justify-center rounded-xl border border-zinc-600 bg-zinc-800 px-4 py-3.5 text-base font-semibold text-white transition hover:bg-zinc-700 active:scale-[0.98] sm:min-h-0 sm:py-3 sm:text-sm;
+  }
+
+  .mobile-bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Bangla UI: applied when locale is বাংলা (see LanguageContext). */
+html.locale-bn body {
+  font-family: var(--font-noto-bengali), ui-sans-serif, system-ui, sans-serif;
+}
