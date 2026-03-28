@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import type { Role } from "@/lib/constants";
+import { resolveAuthSecret } from "@/lib/auth-secret";
 import { prisma } from "@/lib/prisma";
 import { isPinFormat, parseLoginIdentifier } from "@/lib/user-identifiers";
 
@@ -81,5 +82,5 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: resolveAuthSecret(),
 };
