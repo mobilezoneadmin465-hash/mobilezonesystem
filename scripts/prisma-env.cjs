@@ -32,10 +32,26 @@ function buildFromDiscreteVars() {
   return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${database}${q}`;
 }
 
+/** DDL and migrations should not use Supabase pooler (pgbouncer); use session/direct port when possible. */
+function shouldPreferDirectUrl(cliArgs) {
+  const [a, b] = cliArgs;
+  if (a === "migrate") return true;
+  if (a === "db" && (b === "push" || b === "pull")) return true;
+  return false;
+}
+
 /**
  * First non-empty postgres URL from common Vercel / Supabase env names.
+ * @param {string[]} cliArgs full prisma argv (e.g. ["migrate","deploy"])
  */
-function pickPostgresUrl() {
+function pickPostgresUrl(cliArgs = []) {
+  if (shouldPreferDirectUrl(cliArgs)) {
+    for (const k of ["POSTGRES_URL_NON_POOLING", "DIRECT_URL"]) {
+      const v = unquote(process.env[k]);
+      if (v && isPostgresUrl(v)) return v;
+    }
+  }
+
   const keys = [
     "POSTGRES_PRISMA_URL",
     "POSTGRES_URL",
@@ -54,8 +70,8 @@ function pickPostgresUrl() {
   return "";
 }
 
-function ensureDatabaseUrl(prismaSubcommand) {
-  const picked = pickPostgresUrl();
+function ensureDatabaseUrl(prismaSubcommand, cliArgs) {
+  const picked = pickPostgresUrl(cliArgs);
 
   if (picked) {
     process.env.DATABASE_URL = picked;
@@ -83,6 +99,10 @@ Or build from parts:
   POSTGRES_PORT (optional, default 5432)
   POSTGRES_SSL=0        ← only if you must disable SSL (rare)
 
+For prisma migrate / db push on Supabase, set a direct (non-pooler) URL:
+  POSTGRES_URL_NON_POOLING   ← recommended
+  DIRECT_URL                 ← Prisma-style alias
+
 Remove or comment out SQLite lines like DATABASE_URL="file:./dev.db" if you use Postgres.
 `);
   process.exit(1);
@@ -94,7 +114,7 @@ if (args.length === 0) {
   process.exit(1);
 }
 
-ensureDatabaseUrl(args[0]);
+ensureDatabaseUrl(args[0], args);
 
 const { spawnSync } = require("node:child_process");
 const r = spawnSync("npx", ["prisma", ...args], {
