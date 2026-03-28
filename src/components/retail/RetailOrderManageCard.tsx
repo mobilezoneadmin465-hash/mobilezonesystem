@@ -46,7 +46,7 @@ export function RetailOrderManageCard({
     for (const l of order.lines) m[l.productId] = l.quantity;
     setQtyByProduct(m);
     setNote(order.note ?? "");
-  }, [order.id, linesKey, order.note, order.status, order.retailConfirmedAt]);
+  }, [order.id, linesKey, order.lines, order.note, order.status, order.retailConfirmedAt]);
 
   const activeLines = useMemo(() => {
     return Object.entries(qtyByProduct)
@@ -59,7 +59,7 @@ export function RetailOrderManageCard({
         const unitPrice = p?.unitPrice ?? fromOrder?.unitPrice ?? "0";
         return { productId, quantity, brand, name, unitPrice };
       });
-  }, [qtyByProduct, products, order.lines]);
+  }, [qtyByProduct, products, order.lines, t]);
 
   const productsNotInCart = useMemo(() => {
     const ids = new Set(Object.keys(qtyByProduct).filter((id) => (qtyByProduct[id] ?? 0) > 0));

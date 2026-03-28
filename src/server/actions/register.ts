@@ -2,7 +2,6 @@
 
 import { hash } from "bcryptjs";
 import { redirect } from "next/navigation";
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { internalEmailFromUsername, isValidUsername, normalizeUsername } from "@/lib/user-identifiers";
 
@@ -61,11 +60,13 @@ export async function registerOwnerAction(formData: FormData) {
   redirect("/login?registered=owner");
 }
 
-export async function registerSrAction(_formData: FormData) {
+export async function registerSrAction(formData: FormData) {
+  void formData;
   return { error: "Field team accounts are created by the owner from Field team → Add field team." };
 }
 
-export async function registerRetailAction(_formData: FormData) {
+export async function registerRetailAction(formData: FormData) {
+  void formData;
   return {
     error:
       "Retail logins are created by the owner: open Stores, pick a shop, then Add store login. Create the store first with Add store if it does not exist yet.",

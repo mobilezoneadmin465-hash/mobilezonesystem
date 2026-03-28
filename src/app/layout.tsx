@@ -35,9 +35,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="bg-zinc-950" suppressHydrationWarning>
       <body
-        className={`${outfit.className} ${notoBengali.variable} min-h-dvh antialiased`}
+        className={`${outfit.className} ${notoBengali.variable} min-h-dvh bg-zinc-950 antialiased`}
         suppressHydrationWarning
       >
         <Providers>{children}</Providers>

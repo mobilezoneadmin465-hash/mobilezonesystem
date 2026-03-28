@@ -1,10 +1,10 @@
-// SQLite locally; use PostgreSQL in production with the same models.
+// PostgreSQL (Supabase / Vercel Postgres). Set DATABASE_URL or POSTGRES_PRISMA_URL — see resolve-database-env.ts
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
