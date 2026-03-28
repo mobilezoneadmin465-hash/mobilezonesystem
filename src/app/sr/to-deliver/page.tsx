@@ -25,11 +25,7 @@ export default async function SrToDeliverListPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold text-white">To deliver</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Orders assigned to you. Open one, enter quantities, confirm — the store&apos;s due updates
-          immediately.
-        </p>
+        <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">To deliver</h1>
       </header>
 
       {orders.length === 0 ? (

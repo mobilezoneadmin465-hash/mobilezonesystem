@@ -15,17 +15,31 @@
 html {
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
+  overflow-x: clip;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
   overscroll-behavior-y: none;
+  touch-action: manipulation;
+}
+
+/* Horizontal overflow without visible scrollbar (tab bar, wide tables). */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
 }
 
 @layer components {
   .app-card {
-    @apply rounded-[1.25rem] border border-zinc-800 bg-zinc-900/80 p-4 shadow-lg backdrop-blur-sm sm:rounded-2xl;
+    @apply rounded-2xl border border-zinc-800/90 bg-zinc-900/90 p-4 shadow-lg sm:rounded-2xl;
   }
   .app-input {
     @apply min-h-11 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-3 text-base text-white placeholder:text-zinc-600 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/25 sm:min-h-0 sm:py-2.5 sm:text-sm;

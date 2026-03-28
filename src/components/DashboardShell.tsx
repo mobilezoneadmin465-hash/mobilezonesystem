@@ -39,7 +39,10 @@ export function DashboardShell({
   const { t, navLabel } = useLanguage();
   const title = t(titleKey);
   const isApp = theme === "app";
-  const shell = isApp ? "min-h-dvh bg-zinc-950 text-zinc-100" : "min-h-screen bg-slate-50 text-slate-900";
+  /** Mobile app: fill dynamic viewport + clip so only main scrolls; tab bar stays docked (no fixed + bounce). */
+  const shell = isApp
+    ? "flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden bg-zinc-950 text-zinc-100 md:h-auto md:max-h-none md:min-h-screen md:overflow-visible"
+    : "min-h-screen bg-slate-50 text-slate-900";
   const aside = isApp ? "border-zinc-800 bg-zinc-900/90" : "border-slate-200 bg-white";
   const brand = isApp ? "text-teal-400" : "text-teal-600";
   const titleCls = isApp ? "text-white" : "text-slate-900";
@@ -51,15 +54,27 @@ export function DashboardShell({
   const headerBorder = isApp ? "border-zinc-800/80 bg-zinc-950/85 backdrop-blur-xl" : "border-slate-200 bg-white";
   const activeTab = isApp ? activeNavHref(pathname, nav) : null;
 
-  /** Bottom tab bar + home indicator safe area — mobile app shell only */
-  const mainPadApp =
-    "px-4 pt-4 pb-[calc(6.25rem+env(safe-area-inset-bottom,0px))] md:p-8 md:pb-8";
+  /** Main scroll area padding; tab bar is in layout flow on mobile (no extra spacer). */
+  const mainPadApp = "px-4 pt-4 pb-5 md:p-8 md:pb-8";
   const mainPadLight = "p-4 md:p-8";
   const mainPad = isApp ? mainPadApp : mainPadLight;
 
+  const contentCol =
+    isApp
+      ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:overflow-visible"
+      : "flex min-w-0 flex-1 flex-col";
+
+  const mainScroll =
+    isApp
+      ? `${mainPad} flex-1 min-h-0 touch-manipulation overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] md:min-h-0 md:overflow-visible`
+      : `${mainPad} flex-1 touch-manipulation`;
+
+  /** >6 items (e.g. owner): one compact row, horizontal pan only — no visible scrollbar. */
+  const compactTabBar = nav.length > 6;
+
   return (
-    <div className={`${shell} flex flex-col`}>
-      <div className="flex min-h-0 flex-1">
+    <div className={`${shell} ${isApp ? "" : "flex flex-col"}`}>
+      <div className={`flex min-h-0 flex-1 ${isApp ? "min-h-0" : ""}`}>
         <aside className={`hidden w-60 flex-shrink-0 flex-col border-r md:flex ${aside}`}>
           <div className={`border-b px-5 py-4 ${isApp ? "border-zinc-800" : "border-slate-100"}`}>
             <p className={`text-xs font-semibold uppercase tracking-wider ${brand}`}>{t("shell.brand")}</p>
@@ -86,15 +101,17 @@ export function DashboardShell({
           </div>
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className={contentCol}>
           <header
-            className={`sticky top-0 z-30 flex items-start justify-between gap-3 border-b px-4 py-3 md:hidden ${headerBorder}`}
+            className={`z-30 flex shrink-0 items-start justify-between gap-3 border-b px-4 py-3 md:sticky md:top-0 md:hidden ${headerBorder}`}
           >
             <div className={`min-w-0 flex-1 ${isApp ? "pt-[env(safe-area-inset-top,0px)]" : ""}`}>
-              <p className={`text-[10px] font-semibold uppercase tracking-wider ${brand}`}>{t("shell.brand")}</p>
-              <p className={`truncate text-sm font-semibold leading-tight ${titleCls}`}>{title}</p>
+              <p className={`hidden text-[10px] font-semibold uppercase tracking-wider sm:block ${brand}`}>
+                {t("shell.brand")}
+              </p>
+              <p className={`truncate text-base font-bold leading-tight ${titleCls}`}>{title}</p>
               {subtitle ? (
-                <p className={`mt-0.5 truncate text-xs leading-snug ${subCls}`}>{subtitle}</p>
+                <p className={`mt-0.5 hidden truncate text-xs leading-snug md:block ${subCls}`}>{subtitle}</p>
               ) : null}
             </div>
             <div
@@ -106,13 +123,13 @@ export function DashboardShell({
           </header>
 
           {!isApp ? (
-            <div className="border-b border-slate-200 bg-white md:hidden">
-              <nav className="flex gap-2 overflow-x-auto px-3 py-2.5 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="shrink-0 border-b border-slate-200 bg-white md:hidden">
+              <nav className="flex flex-wrap justify-center gap-2 px-3 py-2.5 pb-3">
                 {nav.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium ${navLinkMobile}`}
+                    className={`rounded-full px-3 py-1.5 text-center text-[11px] font-medium leading-tight ${navLinkMobile}`}
                   >
                     {navLabel(item.href)}
                   </Link>
@@ -121,42 +138,47 @@ export function DashboardShell({
             </div>
           ) : null}
 
-          <main className={`flex-1 touch-manipulation ${mainPad}`}>{children}</main>
+          <main className={mainScroll}>{children}</main>
+
+          {isApp ? (
+            <nav
+              className="mobile-bottom-nav z-40 shrink-0 border-t border-zinc-800 bg-zinc-950 shadow-[0_-6px_28px_rgba(0,0,0,0.55)] md:hidden"
+              aria-label="Main"
+            >
+              <div
+                className={
+                  compactTabBar
+                    ? "scrollbar-hide flex touch-pan-x items-stretch gap-0.5 overflow-x-auto px-2 py-1.5"
+                    : "flex w-full items-stretch justify-between gap-0 px-1 pt-1"
+                }
+              >
+                {nav.map((item) => {
+                  const active = item.href === activeTab;
+                  const tabBtn = `flex flex-col items-center justify-center gap-1 rounded-xl transition active:scale-[0.98] ${
+                    compactTabBar
+                      ? "min-w-[4.25rem] max-w-[5.25rem] shrink-0 px-1.5 py-2"
+                      : "min-w-0 flex-1 px-1 py-2"
+                  } ${active ? "bg-teal-500/20 text-teal-300" : "text-zinc-500 active:bg-zinc-800/90"}`;
+                  return (
+                    <Link key={item.href} href={item.href} className={tabBtn}>
+                      <span className={`shrink-0 ${active ? "text-teal-400" : ""}`}>
+                        <NavTabIcon href={item.href} />
+                      </span>
+                      <span
+                        className={`line-clamp-2 w-full px-0.5 text-center text-[11px] font-semibold leading-tight ${
+                          active ? "text-teal-100" : "text-zinc-400"
+                        }`}
+                      >
+                        {navLabel(item.href)}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </nav>
+          ) : null}
         </div>
       </div>
-
-      {isApp ? (
-        <nav
-          className="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-800/90 bg-zinc-950/90 shadow-[0_-8px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl md:hidden"
-          aria-label="Main"
-        >
-          <div className="flex snap-x snap-mandatory gap-0.5 overflow-x-auto px-1.5 py-1.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {nav.map((item) => {
-              const active = item.href === activeTab;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex min-w-[4.25rem] max-w-[5.5rem] shrink-0 snap-start flex-col items-center justify-center gap-0.5 rounded-2xl px-2 py-2 transition active:scale-[0.97] ${
-                    active ? "bg-teal-500/15 text-teal-300" : "text-zinc-500 active:bg-zinc-800/80"
-                  }`}
-                >
-                  <span className={active ? "text-teal-400" : ""}>
-                    <NavTabIcon href={item.href} />
-                  </span>
-                  <span
-                    className={`line-clamp-2 w-full text-center text-[10px] font-medium leading-tight ${
-                      active ? "text-teal-200" : "text-zinc-400"
-                    }`}
-                  >
-                    {navLabel(item.href)}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
-      ) : null}
     </div>
   );
 }

@@ -24,6 +24,8 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
+  const regHint = t("login.registeredHint").trim();
+
   async function handleHint(e: FormEvent) {
     e.preventDefault();
     setError(null);
@@ -79,52 +81,59 @@ export function LoginForm() {
     setError(null);
   }
 
+  const signingAs = t("login.signingInAs").trim();
+  const newBiz = t("login.newBusiness").trim();
+
   return (
-    <div className="app-card relative mx-auto w-full max-w-md space-y-6 border-teal-500/20 p-8">
-      <div className="absolute right-4 top-4">
+    <div className="relative mx-auto w-full max-w-md rounded-t-[1.75rem] border border-zinc-800/80 bg-zinc-900/95 px-5 pb-10 pt-8 shadow-2xl sm:rounded-3xl sm:border-teal-500/15 sm:p-8">
+      <div className="absolute right-4 top-6 sm:right-5 sm:top-8">
         <LanguageToggle variant="login" />
       </div>
 
-      <div className="pr-24">
-        <h1 className="text-2xl font-semibold text-white">{t("login.title")}</h1>
-        {registered ? (
-          <p className="mt-3 rounded-xl border border-teal-500/30 bg-teal-500/10 px-3 py-2 text-sm text-teal-200">
-            {t("login.registeredHint")}
+      <div className="pr-14">
+        <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{t("login.title")}</h1>
+        {registered && regHint ? (
+          <p className="mt-3 rounded-xl border border-teal-500/25 bg-teal-500/10 px-3 py-2 text-sm text-teal-200">
+            {regHint}
           </p>
         ) : null}
       </div>
 
       {step === 1 ? (
-        <form onSubmit={handleHint} className="space-y-4">
-          <label className="block text-xs font-medium uppercase tracking-wide text-zinc-500">
-            {t("login.usernameLabel")}
+        <form onSubmit={handleHint} className="mt-8 space-y-5">
+          <label className="block">
+            <span className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+              {t("login.usernameLabel")}
+            </span>
             <input
               type="text"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               autoComplete="username"
               required
-              className="app-input mt-1.5"
+              className="app-input"
               placeholder={t("login.usernamePlaceholder")}
             />
           </label>
-          <p className="text-xs text-zinc-600">{t("login.usernameHelp")}</p>
           {error ? <p className="text-sm text-red-400">{error}</p> : null}
           <button type="submit" disabled={hintLoading} className="app-btn w-full disabled:opacity-50">
             {hintLoading ? t("login.checking") : t("login.continue")}
           </button>
         </form>
       ) : (
-        <form onSubmit={handleSignIn} className="space-y-4">
-          <button type="button" onClick={goBack} className="text-sm text-teal-400 hover:text-teal-300">
+        <form onSubmit={handleSignIn} className="mt-8 space-y-5">
+          <button type="button" onClick={goBack} className="text-sm font-medium text-teal-400 active:text-teal-300">
             {t("login.changeUser")}
           </button>
-          <p className="text-sm text-zinc-400">
-            {t("login.signingInAs")}{" "}
-            <span className="font-medium text-zinc-200">{identifier.trim()}</span>
-          </p>
-          <label className="block text-xs font-medium uppercase tracking-wide text-zinc-500">
-            {authType === "pin" ? t("login.pinLabel") : t("login.passwordLabel")}
+          {signingAs ? (
+            <p className="text-sm text-zinc-400">
+              {signingAs} <span className="font-medium text-zinc-100">{identifier.trim()}</span>
+            </p>
+          ) : null}
+          <label className="block">
+            <span className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+              {authType === "pin" ? t("login.pinLabel") : t("login.passwordLabel")}
+            </span>
             <input
               type="password"
               value={secret}
@@ -134,8 +143,9 @@ export function LoginForm() {
               pattern={authType === "pin" ? "[0-9]*" : undefined}
               maxLength={authType === "pin" ? 6 : undefined}
               required
-              className="app-input mt-1.5"
-              placeholder={authType === "pin" ? "••••••" : undefined}
+              className="app-input"
+              placeholder={authType === "pin" ? "••••••" : "••••••••"}
+              autoFocus
             />
           </label>
           {error ? <p className="text-sm text-red-400">{error}</p> : null}
@@ -145,12 +155,20 @@ export function LoginForm() {
         </form>
       )}
 
-      <p className="text-center text-sm text-zinc-500">
-        {t("login.newBusiness")}{" "}
-        <Link href="/register/owner" className="font-medium text-teal-400 hover:text-teal-300">
-          {t("login.registerOwner")}
-        </Link>
-      </p>
+      <div className="mt-8 text-center">
+        {newBiz ? (
+          <p className="text-sm text-zinc-500">
+            {newBiz}{" "}
+            <Link href="/register/owner" className="font-semibold text-teal-400 active:text-teal-300">
+              {t("login.registerOwner")}
+            </Link>
+          </p>
+        ) : (
+          <Link href="/register/owner" className="text-sm font-semibold text-teal-400 active:text-teal-300">
+            {t("login.registerOwner")}
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

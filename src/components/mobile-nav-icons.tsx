@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 function Icon({
   children,
-  className = "h-6 w-6",
+  className = "h-7 w-7",
 }: {
   children: ReactNode;
   className?: string;
@@ -13,7 +13,7 @@ function Icon({
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
-      strokeWidth={1.75}
+      strokeWidth={1.65}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden

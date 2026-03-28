@@ -218,7 +218,7 @@ export default async function OwnerDashboardPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-semibold text-white">{t("owner.dashboard.overview")}</h1>
+      <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{t("owner.dashboard.overview")}</h1>
       <OwnerOverviewCards totals={totals} detail={detail} />
     </div>
   );

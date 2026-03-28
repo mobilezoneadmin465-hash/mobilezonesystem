@@ -8,29 +8,26 @@ export default async function RegisterHubPage() {
   if (session?.user) redirect("/");
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-4 bg-zinc-950 px-4 py-12">
-      <div className="text-center">
-        <h1 className="text-2xl font-semibold text-white">Create an account</h1>
-      </div>
-      <Link href="/register/owner" className="app-btn text-center">
-        I am the business owner
-      </Link>
-      <p className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-3 text-center text-sm text-zinc-400">
-        Field team and retail staff get a <span className="text-zinc-200">username + PIN</span> from the owner — no
-        self-sign-up.
-      </p>
-      <Link href="/register/sr" className="app-btn-secondary text-center text-sm">
-        Field / sales (info)
-      </Link>
-      <Link href="/register/retail" className="app-btn-secondary text-center text-sm">
-        Retail (info)
-      </Link>
-      <p className="text-center text-sm text-zinc-500">
-        Already have an account?{" "}
-        <Link href="/login" className="text-teal-400 hover:underline">
+    <div className="relative flex min-h-dvh flex-col bg-zinc-950 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(20,184,166,0.1),transparent)]" />
+      <div className="relative z-[1] mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-3">
+        <h1 className="mb-4 text-center text-2xl font-bold tracking-tight text-white">Sign up</h1>
+        <Link href="/register/owner" className="app-btn py-4 text-center text-base">
+          Owner
+        </Link>
+        <Link href="/register/sr" className="app-btn-secondary py-3.5 text-center text-sm">
+          Field
+        </Link>
+        <Link href="/register/retail" className="app-btn-secondary py-3.5 text-center text-sm">
+          Retail
+        </Link>
+        <Link
+          href="/login"
+          className="mt-6 py-3 text-center text-sm font-medium text-teal-400 active:text-teal-300"
+        >
           Sign in
         </Link>
-      </p>
+      </div>
     </div>
   );
 }

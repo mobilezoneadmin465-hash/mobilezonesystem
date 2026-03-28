@@ -140,7 +140,6 @@ export function RetailPayForms({
 
       {tab === "online" ? (
         <form onSubmit={onOnline} className="app-card space-y-4">
-          <p className="text-sm text-zinc-400">{t("retail.pay.onlineHint")}</p>
           <label className="text-xs text-zinc-500">
             {t("retail.pay.amountBdt")}
             <input name="amount" type="text" required className="app-input mt-1" placeholder="5000" />
@@ -183,7 +182,6 @@ export function RetailPayForms({
             </p>
           ) : (
             <form onSubmit={onCashHand} className="space-y-4">
-              <p className="text-sm text-zinc-400">{t("retail.pay.cashHint")}</p>
               <label className="text-xs text-zinc-500">
                 {t("retail.pay.amountBdt")}
                 <input name="amount" type="text" required className="app-input mt-1" placeholder="Up to your due" />

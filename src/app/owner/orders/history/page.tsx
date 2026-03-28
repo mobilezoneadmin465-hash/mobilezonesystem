@@ -20,12 +20,9 @@ export default async function OwnerOrdersHistoryPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-white">{t("owner.orders.historyTitle")}</h1>
-          <p className="mt-1 text-sm text-zinc-500">{t("owner.orders.historyHint")}</p>
-        </div>
-        <Link href="/owner/orders" className="app-btn-secondary py-2.5 text-center text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{t("owner.orders.historyTitle")}</h1>
+        <Link href="/owner/orders" className="app-btn-secondary shrink-0 py-2.5 text-center text-xs sm:text-sm">
           {t("owner.orders.activeLink")}
         </Link>
       </div>

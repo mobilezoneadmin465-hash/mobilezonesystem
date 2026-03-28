@@ -52,13 +52,12 @@ export const retailEn: Record<string, any> = {
     tabOnline: "Mobile / online pay",
     tabProof: "Bank / bKash proof",
     tabCash: "Cash in hand",
-    msgOnlinePending: "Sent to owner for approval. Your due will update after they approve.",
+    msgOnlinePending: "Sent.",
     msgSubmitted: "Submitted.",
-    msgCashRecorded: "Recorded. Your supplier will confirm and update your due.",
+    msgCashRecorded: "Recorded.",
     errPhotoLarge: "Photo is too large. Please choose a smaller image.",
     errAttachPhoto: "Attach a clear photo of the transfer slip or screenshot.",
-    onlineHint:
-      "Request is sent to your supplier's owner. They approve it before your due goes down (same as bank proof).",
+    onlineHint: "",
     amountBdt: "Amount (BDT)",
     saving: "Saving…",
     sending: "Sending…",
@@ -68,10 +67,8 @@ export const retailEn: Record<string, any> = {
     proofNotePlaceholder: "Trx ID, bank name…",
     screenshot: "Screenshot / photo",
     cashNoDue: "You have nothing due right now.",
-    cashNoPayees:
-      "No staff or owner is available to select. Ask your supplier to add field team or check back after a delivery is assigned.",
-    cashHint:
-      "Record cash you physically handed to someone on your supplier's team. They hold it until the owner confirms — then your due goes down. By default we suggest whoever is handling your current delivery.",
+    cashNoPayees: "No payee available.",
+    cashHint: "",
     handedTo: "Handed cash to",
     selectPlaceholder: "Select…",
     cashNotePlaceholder: "Receipt #, time…",
@@ -81,7 +78,7 @@ export const retailEn: Record<string, any> = {
   },
   confirm: { receive: "Receive", receiving: "…" },
   cart: {
-    chooseStore: "Choose which store this order is for.",
+    chooseStore: "Select store",
     emptyCart: "Your cart is empty.",
     yourCart: "Your cart",
     close: "Close",
@@ -120,8 +117,8 @@ export const retailEn: Record<string, any> = {
     saving: "Saving…",
     confirm: "Confirm",
     cancelOrder: "Cancel",
-    cancelConfirm: "Cancel this order? This cannot be undone.",
-    addBeforeConfirm: "Add at least one product before confirming.",
+    cancelConfirm: "Cancel order?",
+    addBeforeConfirm: "Add a product first.",
     decrease: "Decrease",
     increase: "Increase",
   },
@@ -157,13 +154,12 @@ export const retailBn: Record<string, any> = {
     tabOnline: "মোবাইল / অনলাইন পে",
     tabProof: "ব্যাংক / বিকাশ প্রমাণ",
     tabCash: "হাতে নগদ",
-    msgOnlinePending: "মালিকের কাছে অনুমোদনের জন্য পাঠানো হয়েছে। অনুমোদনের পর বাকি কমবে।",
+    msgOnlinePending: "পাঠানো হয়েছে।",
     msgSubmitted: "জমা হয়েছে।",
-    msgCashRecorded: "রেকর্ড হয়েছে। সরবরাহকারী নিশ্চিত করলে বাকি আপডেট হবে।",
+    msgCashRecorded: "রেকর্ড হয়েছে।",
     errPhotoLarge: "ছবি খুব বড়। ছোট ছবি বেছে নিন।",
     errAttachPhoto: "ট্রান্সফার স্লিপ বা স্ক্রিনশটের স্পষ্ট ছবি সংযুক্ত করুন।",
-    onlineHint:
-      "অনুরোধ আপনার সরবরাহকারীর মালিকের কাছে যায়। ব্যাংক প্রমাণের মতো অনুমোদনের পর বাকি কমে।",
+    onlineHint: "",
     amountBdt: "পরিমাণ (টাকা)",
     saving: "সংরক্ষণ…",
     sending: "পাঠানো…",
@@ -173,10 +169,8 @@ export const retailBn: Record<string, any> = {
     proofNotePlaceholder: "ট্রান্জাকশন আইডি, ব্যাংকের নাম…",
     screenshot: "স্ক্রিনশট / ছবি",
     cashNoDue: "এখন কিছু বাকি নেই।",
-    cashNoPayees:
-      "কোনো স্টাফ বা মালিক বেছে নেওয়ার মতো নেই। ফিল্ড টিম যোগ করতে বলুন বা ডেলিভারি নিযুক্ত হলে আবার চেষ্টা করুন।",
-    cashHint:
-      "আপনি সরবরাহকারীর টিমের কাছে যে নগদ দিয়েছেন তা রেকর্ড করুন। মালিক নিশ্চিত না করা পর্যন্ত তা ধরে রাখা হয় — তারপর বাকি কমে। ডিফল্টে বর্তমান ডেলিভারি হ্যান্ডলারকে সাজেস্ট করা হয়।",
+    cashNoPayees: "কেউ নেই।",
+    cashHint: "",
     handedTo: "নগদ দিয়েছেন",
     selectPlaceholder: "বেছে নিন…",
     cashNotePlaceholder: "রসিদ #, সময়…",
@@ -186,7 +180,7 @@ export const retailBn: Record<string, any> = {
   },
   confirm: { receive: "গ্রহণ করুন", receiving: "…" },
   cart: {
-    chooseStore: "কোন দোকানের জন্য অর্ডার তা বেছে নিন।",
+    chooseStore: "দোকান বেছে নিন",
     emptyCart: "কার্ট খালি।",
     yourCart: "আপনার কার্ট",
     close: "বন্ধ",
@@ -211,11 +205,11 @@ export const retailBn: Record<string, any> = {
   orderCard: {
     each: "প্রতি",
     unknownProduct: "অজানা পণ্য",
-    keepLine: "অন্তত একটি লাইনে পরিমাণ রাখুন, অথবা অর্ডার বাতিল করুন।",
-    confirmedWarehouse: "গুদামের জন্য নিশ্চিত",
-    notConfirmed: "এখনো নিশ্চিত নয় — চূড়ান্ত হলে নিশ্চিত করুন।",
-    receivedProgress: "এই অর্ডারে এ পর্যন্ত গ্রহণ:",
-    unitsDueLine: "ইউনিট — মাল আসলে বাকি আপডেট হবে।",
+    keepLine: "",
+    confirmedWarehouse: "গুদাম",
+    notConfirmed: "অপেক্ষমাণ",
+    receivedProgress: "গ্রহণ",
+    unitsDueLine: "ইউনিট",
     deliveredShort: "ডেলিভার্ড",
     notePrefix: "নোট:",
     addProduct: "পণ্য যোগ",
@@ -225,8 +219,8 @@ export const retailBn: Record<string, any> = {
     saving: "সংরক্ষণ…",
     confirm: "নিশ্চিত করুন",
     cancelOrder: "বাতিল",
-    cancelConfirm: "এই অর্ডার বাতিল? ফেরত নেওয়া যাবে না।",
-    addBeforeConfirm: "নিশ্চিত করার আগে অন্তত একটি পণ্য যোগ করুন।",
+    cancelConfirm: "অর্ডার বাতিল?",
+    addBeforeConfirm: "আগে পণ্য যোগ করুন।",
     decrease: "কমান",
     increase: "বাড়ান",
   },
@@ -234,7 +228,7 @@ export const retailBn: Record<string, any> = {
 
 export const ownerEn: Record<string, any> = {
   dashboard: {
-    overview: "Overview",
+    overview: "Home",
     cardWarehouse: "Warehouse value",
     cardOffice: "At office",
     cardReps: "With sales reps",
@@ -254,14 +248,13 @@ export const ownerEn: Record<string, any> = {
     noActiveOrders: "No open or assigned orders.",
   },
   orders: {
-    activeTitle: "Orders — in progress",
-    activeHint: "Open and assigned work. Completed and cancelled move to Past orders.",
-    pastLink: "Past orders",
+    activeTitle: "Orders",
+    activeHint: "",
+    pastLink: "Past",
     noActive: "No active orders.",
-    historyTitle: "Past orders",
-    historyHint:
-      "Completed sales and voided orders. Cancelled rows are removed from the database after 24 hours.",
-    activeLink: "Active orders",
+    historyTitle: "Past",
+    historyHint: "",
+    activeLink: "Active",
     noHistory: "No history yet.",
   },
   orderCard: {
@@ -279,11 +272,9 @@ export const ownerEn: Record<string, any> = {
     unassign: "Unassign",
     markComplete: "Mark complete",
     cancelVoid: "Cancel / void",
-    cancelConfirm:
-      "Cancel this order? Deliveries for this order will be reversed from due and stock returned to reps.",
-    voidOrder: "Void order (reverse due & stock)",
-    voidConfirm:
-      "Void this completed order? All linked deliveries will be reversed (due cleared, stock returned to reps). Use only if it was a mistake.",
+    cancelConfirm: "Cancel order? Stock and due will be adjusted.",
+    voidOrder: "Void order",
+    voidConfirm: "Void this order? Adjusts stock and due.",
     completedOn: "Completed",
     cancelledOn: "Cancelled",
     confirmedOn: "Confirmed",
@@ -332,7 +323,7 @@ export const ownerEn: Record<string, any> = {
   summary: { title: "Today", pageTitle: "Daily summary" },
   shopCredit: {
     creditLimit: "Credit limit",
-    raiseHint: "Raise if you trust the store with more outstanding.",
+    raiseHint: "",
     save: "Save limit",
     dueNow: "Due now",
     limitLine: "Limit",
@@ -342,7 +333,7 @@ export const ownerEn: Record<string, any> = {
 
 export const ownerBn: Record<string, any> = {
   dashboard: {
-    overview: "সারসংক্ষেপ",
+    overview: "হোম",
     cardWarehouse: "গুদামের মূল্য",
     cardOffice: "অফিসে",
     cardReps: "ফিল্ড টিমের কাছে",
@@ -362,14 +353,13 @@ export const ownerBn: Record<string, any> = {
     noActiveOrders: "খোলা বা নিযুক্ত অর্ডার নেই।",
   },
   orders: {
-    activeTitle: "অর্ডার — চলমান",
-    activeHint: "খোলা ও নিযুক্ত কাজ। সম্পন্ন ও বাতিল পুরনো অর্ডারে যায়।",
-    pastLink: "পুরনো অর্ডার",
+    activeTitle: "অর্ডার",
+    activeHint: "",
+    pastLink: "পুরনো",
     noActive: "কোনো চলমান অর্ডার নেই।",
-    historyTitle: "পুরনো অর্ডার",
-    historyHint:
-      "সম্পন্ন বিক্রয় ও বাতিল। বাতিল রেকর্ড ২৪ ঘণ্টা পর ডাটাবেস থেকে মুছে যায়।",
-    activeLink: "চলমান অর্ডার",
+    historyTitle: "পুরনো",
+    historyHint: "",
+    activeLink: "চলমান",
     noHistory: "এখনো ইতিহাস নেই।",
   },
   orderCard: {
@@ -387,11 +377,9 @@ export const ownerBn: Record<string, any> = {
     unassign: "নিয়োগ খুলুন",
     markComplete: "সম্পন্ন চিহ্নিত করুন",
     cancelVoid: "বাতিল করুন",
-    cancelConfirm:
-      "অর্ডার বাতিল? এই অর্ডারের ডেলিভারি বাতিল হয়ে বাকি ও স্টক প্রতিনিধির কাছে ফিরবে।",
-    voidOrder: "অর্ডার বাতিল (বাকি ও স্টক ফেরত)",
-    voidConfirm:
-      "সম্পন্ন অর্ডার বাতিল? সব লিংকড ডেলিভারি বাতিল হবে। শুধু ভুল হলে ব্যবহার করুন।",
+    cancelConfirm: "অর্ডার বাতিল? বাকি ও স্টক ঠিক হবে।",
+    voidOrder: "অর্ডার বাতিল",
+    voidConfirm: "এই অর্ডার বাতিল? বাকি ও স্টক ঠিক হবে।",
     completedOn: "সম্পন্ন",
     cancelledOn: "বাতিল",
     confirmedOn: "নিশ্চিত",
@@ -422,7 +410,7 @@ export const ownerBn: Record<string, any> = {
   },
   payments: {
     title: "পেমেন্ট অনুমোদন",
-    hint: "নগদ, প্রমাণ ও অনলাইন অনুরোধ নিশ্চিত করুন যাতে বাকি আপডেট হয়।",
+    hint: "",
     none: "অপেক্ষমাণ কিছু নেই।",
     approve: "অনুমোদন",
     reject: "প্রত্যাখ্যান",
@@ -440,7 +428,7 @@ export const ownerBn: Record<string, any> = {
   summary: { title: "আজ", pageTitle: "দৈনিক সারসংক্ষেপ" },
   shopCredit: {
     creditLimit: "ক্রেডিট সীমা",
-    raiseHint: "বিশ্বাস হলে সীমা বাড়ান।",
+    raiseHint: "",
     save: "সীমা সংরক্ষণ",
     dueNow: "এখন বাকি",
     limitLine: "সীমা",

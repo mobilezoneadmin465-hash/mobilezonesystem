@@ -132,9 +132,6 @@ export function SrToDeliverOrderForm({
       <button type="button" disabled={pending} onClick={submit} className="app-btn py-2.5 text-sm">
         {pending ? "Recording…" : "Confirm delivery"}
       </button>
-      <p className="text-xs text-zinc-500">
-        Confirmed deliveries add to the store&apos;s due right away. Stock is taken from your load.
-      </p>
     </div>
   );
 }

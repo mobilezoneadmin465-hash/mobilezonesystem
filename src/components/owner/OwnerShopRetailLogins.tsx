@@ -13,10 +13,7 @@ export function OwnerShopRetailLogins({ shopId, users }: { shopId: string; users
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-white">Store logins</h2>
-          <p className="text-sm text-zinc-500">Each person gets a username and 6-digit PIN.</p>
-        </div>
+        <h2 className="text-lg font-bold text-white">Store logins</h2>
         <button type="button" onClick={() => setAddOpen(true)} className="app-btn py-2.5 text-sm">
           Add store login
         </button>
@@ -46,7 +43,7 @@ export function OwnerShopRetailLogins({ shopId, users }: { shopId: string; users
           </li>
         ))}
       </ul>
-      {users.length === 0 ? <p className="text-sm text-zinc-500">No logins yet for this store.</p> : null}
+      {users.length === 0 ? <p className="text-sm text-zinc-500">None</p> : null}
     </section>
   );
 }

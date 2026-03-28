@@ -25,7 +25,7 @@ export default async function OwnerShopsPage() {
       {rows.length === 0 ? (
         <p className="text-sm text-zinc-500">{t("owner.shops.noStores")}</p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950/40 shadow-inner">
+        <div className="scrollbar-hide overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950/40 shadow-inner">
           <table className="w-full min-w-[720px] border-collapse text-left">
             <thead>
               <tr className="border-b border-zinc-800 bg-zinc-900/90">

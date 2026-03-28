@@ -32,7 +32,7 @@ export default async function RetailHomePage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-semibold text-white">{shop.name}</h1>
+      <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{shop.name}</h1>
 
       <div className={`app-card ${over ? "border-red-500/40 bg-red-500/5" : "border-teal-500/20"}`}>
         <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{t("retail.home.amountDue")}</p>
@@ -46,7 +46,7 @@ export default async function RetailHomePage() {
       <div className="grid grid-cols-2 gap-3">
         <div className="app-card text-center">
           <p className="text-2xl font-semibold text-sky-400">{pendingD}</p>
-          <p className="text-xs text-zinc-500">To receive</p>
+          <p className="text-xs text-zinc-500">{t("retail.home.toReceive")}</p>
         </div>
         <div className="app-card text-center">
           <p className="text-2xl font-semibold text-amber-400">{pendingProofs}</p>

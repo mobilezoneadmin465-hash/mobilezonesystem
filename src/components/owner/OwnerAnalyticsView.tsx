@@ -59,13 +59,8 @@ export function OwnerAnalyticsView({
 }) {
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-zinc-400">
-          <span className="font-medium text-zinc-300">{data.rangeDescription}</span>
-          <span className="text-zinc-600"> · </span>
-          Sales from orders you marked <span className="text-zinc-300">complete</span>. Profit uses each product&apos;s
-          current <span className="text-zinc-300">cost price</span> on the Stock page.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">{data.rangeDescription}</p>
         <div className="flex flex-wrap gap-2">
           {RANGES.map((r) => {
             const active = r.id === activeRange;
@@ -88,53 +83,22 @@ export function OwnerAnalyticsView({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi
-          title="Sales revenue"
-          value={formatMoney(data.revenue)}
-          hint={`${data.completedOrders} completed orders · ${data.unitsSold} units`}
-          accent="teal"
-        />
-        <Kpi title="Cost of goods (COGS)" value={formatMoney(data.cogs)} hint="Qty × cost on file" />
-        <Kpi
-          title="Gross profit"
-          value={formatMoney(data.grossProfit)}
-          hint={
-            data.marginPercent !== null
-              ? `${data.marginPercent.toFixed(1)}% margin on sales`
-              : "Add cost prices to see margin"
-          }
-          accent="amber"
-        />
-        <Kpi
-          title="Avg order value"
-          value={formatMoney(data.avgOrderValue)}
-          hint="Completed orders only"
-        />
+        <Kpi title="Sales revenue" value={formatMoney(data.revenue)} accent="teal" />
+        <Kpi title="COGS" value={formatMoney(data.cogs)} />
+        <Kpi title="Gross profit" value={formatMoney(data.grossProfit)} accent="amber" />
+        <Kpi title="Avg order" value={formatMoney(data.avgOrderValue)} />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <Kpi
-          title="Cash collected"
-          value={formatMoney(data.cashCollected)}
-          hint="Approved payments in this period (may differ from sales timing)"
-          accent="teal"
-        />
-        <Kpi
-          title="Open pipeline"
-          value={formatMoney(data.pipelineValue)}
-          hint={`${data.pipelineOrders} open / assigned orders`}
-        />
-        <Kpi
-          title="Warehouse stock"
-          value={`${data.inventoryUnits} units`}
-          hint={`At cost ${formatMoney(data.inventoryAtCost)} · retail ${formatMoney(data.inventoryAtRetail)}`}
-        />
+        <Kpi title="Cash collected" value={formatMoney(data.cashCollected)} accent="teal" />
+        <Kpi title="Open pipeline" value={formatMoney(data.pipelineValue)} />
+        <Kpi title="Warehouse stock" value={`${data.inventoryUnits} units`} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <TableCard title="Best sellers (by units)">
           {data.topByQuantity.length === 0 ? (
-            <p className="text-sm text-zinc-500">No completed sales in this range.</p>
+            <p className="text-sm text-zinc-500">None</p>
           ) : (
             <ul className="space-y-2 text-sm">
               {data.topByQuantity.map((row) => (
@@ -155,7 +119,7 @@ export function OwnerAnalyticsView({
 
         <TableCard title="Top by revenue">
           {data.topByRevenue.length === 0 ? (
-            <p className="text-sm text-zinc-500">No completed sales in this range.</p>
+            <p className="text-sm text-zinc-500">None</p>
           ) : (
             <ul className="space-y-2 text-sm">
               {data.topByRevenue.map((row) => (
@@ -178,7 +142,7 @@ export function OwnerAnalyticsView({
       <div className="grid gap-4 lg:grid-cols-2">
         <TableCard title="Stores by sales">
           {data.topShops.length === 0 ? (
-            <p className="text-sm text-zinc-500">No completed orders in this range.</p>
+            <p className="text-sm text-zinc-500">None</p>
           ) : (
             <ul className="space-y-2 text-sm">
               {data.topShops.map((row) => (
@@ -199,7 +163,7 @@ export function OwnerAnalyticsView({
 
         <TableCard title="Brands">
           {data.topBrands.length === 0 ? (
-            <p className="text-sm text-zinc-500">No completed sales in this range.</p>
+            <p className="text-sm text-zinc-500">None</p>
           ) : (
             <ul className="space-y-2 text-sm">
               {data.topBrands.map((row) => (
@@ -221,9 +185,7 @@ export function OwnerAnalyticsView({
 
       <TableCard title="Field team (completed orders)">
         {data.topReps.length === 0 ? (
-          <p className="text-sm text-zinc-500">
-            No completed orders with an assigned rep in this range, or reps were unassigned before completion.
-          </p>
+          <p className="text-sm text-zinc-500">None</p>
         ) : (
           <ul className="space-y-2 text-sm">
             {data.topReps.map((row) => (
@@ -242,7 +204,7 @@ export function OwnerAnalyticsView({
 
       <TableCard title="Low warehouse stock (≤ 5 units)">
         {data.lowStock.length === 0 ? (
-          <p className="text-sm text-zinc-500">Nothing low right now (or warehouse empty).</p>
+          <p className="text-sm text-zinc-500">None</p>
         ) : (
           <ul className="grid gap-2 text-sm sm:grid-cols-2">
             {data.lowStock.map((row) => (

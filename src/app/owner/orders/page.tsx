@@ -20,13 +20,10 @@ export default async function OwnerOrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-white">Orders — in progress</h1>
-          <p className="mt-1 text-sm text-zinc-500">Open and assigned work. Completed and cancelled move to Past orders.</p>
-        </div>
-        <Link href="/owner/orders/history" className="app-btn-secondary py-2.5 text-center text-sm">
-          Past orders
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{t("owner.orders.activeTitle")}</h1>
+        <Link href="/owner/orders/history" className="app-btn-secondary shrink-0 py-2.5 text-center text-xs sm:text-sm">
+          {t("owner.orders.pastLink")}
         </Link>
       </div>
       <ul className="space-y-4">

@@ -26,10 +26,7 @@ export default async function OwnerPaymentsQueuePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-white">{t("owner.payments.title")}</h1>
-        <p className="mt-1 text-sm text-zinc-500">{t("owner.payments.hint")}</p>
-      </div>
+      <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{t("owner.payments.title")}</h1>
       <OwnerProofQueue items={items} />
     </div>
   );

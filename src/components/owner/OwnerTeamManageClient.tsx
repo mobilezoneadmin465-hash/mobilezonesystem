@@ -31,8 +31,7 @@ export function OwnerTeamManageClient({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-zinc-500">Sales reps sign in with their username and 6-digit PIN.</p>
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <button type="button" onClick={() => setAddOpen(true)} className="app-btn py-2.5 text-sm">
           Add field team
         </button>
@@ -91,7 +90,7 @@ export function OwnerTeamManageClient({
           </li>
         ))}
       </ul>
-      {initialSrs.length === 0 ? <p className="text-sm text-zinc-500">No field team yet.</p> : null}
+      {initialSrs.length === 0 ? <p className="text-sm text-zinc-500">None</p> : null}
     </div>
   );
 }

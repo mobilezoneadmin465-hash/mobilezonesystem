@@ -61,10 +61,7 @@ export default async function OwnerShopDetailPage({ params }: Props) {
 
       <section className="space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-white">{t("owner.shops.ordersProgress")}</h2>
-            <p className="text-xs text-zinc-500">{t("owner.shops.ordersProgressHint")}</p>
-          </div>
+          <h2 className="text-lg font-bold text-white">{t("owner.shops.ordersProgress")}</h2>
           <Link
             href={`/owner/place-order?shop=${encodeURIComponent(shopId)}`}
             className="app-btn shrink-0 py-2.5 text-center text-sm"
@@ -80,8 +77,7 @@ export default async function OwnerShopDetailPage({ params }: Props) {
         {activeOrders.length === 0 ? <p className="text-sm text-zinc-500">{t("owner.shops.noActive")}</p> : null}
 
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">{t("owner.shops.recentPast")}</h3>
-          <p className="mt-1 text-xs text-zinc-600">{t("owner.shops.fullHistory")}</p>
+          <h3 className="text-sm font-bold uppercase tracking-wide text-zinc-400">{t("owner.shops.recentPast")}</h3>
           <ul className="mt-3 space-y-4">
             {historyOrders.map((o) => (
               <OwnerOrderCard key={o.id} mode="archive" order={o} salesReps={salesReps} />
