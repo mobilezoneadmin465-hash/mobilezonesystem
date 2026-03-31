@@ -92,6 +92,7 @@ model CatalogProduct {
   srRows    SrInventory[]
   lines      ShopDeliveryLine[]
   orderLines ShopOrderLine[]
+  imeis      ProductImei[]
 
   @@index([brandId])
 }
@@ -137,6 +138,8 @@ model ShopOrderLine {
   /// How many units the assigned rep has already delivered to the store (adds to shop due).
   deliveredQty Int            @default(0)
   unitPrice    Decimal
+  /// Snapshot of cost at the time the order line was created/edited.
+  unitCost     Decimal        @default(0)
 
   @@index([orderId])
 }
@@ -146,6 +149,23 @@ model OfficeInventory {
   productId String         @unique
   product   CatalogProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
   quantity  Int            @default(0)
+}
+
+model ProductImei {
+  id         String         @id @default(cuid())
+  productId   String
+  product     CatalogProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  imei        String         @unique
+  location    String         @default("WAREHOUSE")
+  srId        String?
+  shopId      String?
+  deliveryId  String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([productId, location])
+  @@index([srId, productId])
+  @@index([shopId, productId])
 }
 
 model SrInventory {

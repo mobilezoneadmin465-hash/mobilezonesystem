@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
+import { moveImeis, syncOfficeQty, syncProductWarehouseQty, syncSrQty } from "@/lib/imei-stock";
 import { assertCreditAfterConfirmingDeliveryTx } from "@/lib/shop-credit";
 import { prisma } from "@/lib/prisma";
 
@@ -33,11 +34,24 @@ export async function takeFromWarehouseAction(formData: FormData) {
         data: { warehouseQty: p.warehouseQty - qty },
       });
 
+      const moved = await moveImeis(tx, {
+        productId,
+        quantity: qty,
+        fromLocation: "WAREHOUSE",
+        toLocation: "SR",
+        toSrId: user.id,
+      });
+
       await tx.srInventory.upsert({
         where: { srId_productId: { srId: user.id, productId } },
         create: { srId: user.id, productId, quantity: qty },
         update: { quantity: { increment: qty } },
       });
+
+      if (moved) {
+        await syncProductWarehouseQty(tx, productId);
+        await syncSrQty(tx, user.id, productId);
+      }
     });
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Could not update stock." };
@@ -78,11 +92,24 @@ export async function sendToOfficeAction(formData: FormData) {
         data: { quantity: row.quantity - qty },
       });
 
+      const moved = await moveImeis(tx, {
+        productId,
+        quantity: qty,
+        fromLocation: "SR",
+        toLocation: "OFFICE",
+        fromSrId: user.id,
+      });
+
       await tx.officeInventory.upsert({
         where: { productId },
         create: { productId, quantity: qty },
         update: { quantity: { increment: qty } },
       });
+
+      if (moved) {
+        await syncSrQty(tx, user.id, productId);
+        await syncOfficeQty(tx, productId);
+      }
     });
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Could not move stock." };
@@ -119,11 +146,24 @@ export async function takeFromOfficeAction(formData: FormData) {
         data: { quantity: office.quantity - qty },
       });
 
+      const moved = await moveImeis(tx, {
+        productId,
+        quantity: qty,
+        fromLocation: "OFFICE",
+        toLocation: "SR",
+        toSrId: user.id,
+      });
+
       await tx.srInventory.upsert({
         where: { srId_productId: { srId: user.id, productId } },
         create: { srId: user.id, productId, quantity: qty },
         update: { quantity: { increment: qty } },
       });
+
+      if (moved) {
+        await syncOfficeQty(tx, productId);
+        await syncSrQty(tx, user.id, productId);
+      }
     });
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Could not pick up stock." };
@@ -227,6 +267,15 @@ export async function srDeliverOrderBatchAction(formData: FormData) {
           data: { quantity: inv.quantity - item.quantity },
         });
 
+        const moved = await moveImeis(tx, {
+          productId: line.productId,
+          quantity: item.quantity,
+          fromLocation: "SR",
+          toLocation: "DELIVERED",
+          fromSrId: user.id,
+          toShopId: order.shopId,
+        });
+
         await tx.shopDeliveryLine.create({
           data: {
             deliveryId: delivery.id,
@@ -244,6 +293,7 @@ export async function srDeliverOrderBatchAction(formData: FormData) {
         line.deliveredQty += item.quantity;
         batchTotal = batchTotal.add(new Prisma.Decimal(line.unitPrice).mul(item.quantity));
         const product = await tx.catalogProduct.findUnique({ where: { id: line.productId } });
+        if (moved) await syncSrQty(tx, user.id, line.productId);
         detailParts.push(
           product
             ? `${product.brand} ${product.name}×${item.quantity}`
@@ -343,6 +393,16 @@ export async function deliverToRetailAction(formData: FormData) {
           data: { quantity: inv.quantity - line.quantity },
         });
 
+        const moved = await moveImeis(tx, {
+          productId: line.productId,
+          quantity: line.quantity,
+          fromLocation: "SR",
+          toLocation: "PENDING_RETAIL",
+          fromSrId: user.id,
+          toShopId: shopId,
+          toDeliveryId: delivery.id,
+        });
+
         await tx.shopDeliveryLine.create({
           data: {
             deliveryId: delivery.id,
@@ -351,6 +411,7 @@ export async function deliverToRetailAction(formData: FormData) {
             unitPrice: product.unitPrice,
           },
         });
+        if (moved) await syncSrQty(tx, user.id, line.productId);
       }
     });
   } catch (e) {
@@ -398,6 +459,10 @@ export async function confirmRetailDeliveryAction(deliveryId: string) {
       await tx.shopDelivery.update({
         where: { id: deliveryId },
         data: { status: "CONFIRMED", confirmedAt: new Date() },
+      });
+      await tx.productImei.updateMany({
+        where: { deliveryId, location: "PENDING_RETAIL" },
+        data: { location: "DELIVERED", shopId: d.shopId },
       });
     });
   } catch (e) {

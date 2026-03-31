@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@zxing/browser": "^0.1.5",
     "bcryptjs": "^3.0.3",
     "next": "^15.2.4",
     "next-auth": "^4.24.11",

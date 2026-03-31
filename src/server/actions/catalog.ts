@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { parseImeis, syncProductWarehouseQty } from "@/lib/imei-stock";
 import { logActivity } from "@/lib/activity";
 import { prisma } from "@/lib/prisma";
 
@@ -31,12 +32,10 @@ export async function createProductAction(formData: FormData) {
   const brandId = String(formData.get("brandId") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim() || null;
-  const warehouseQty = Number(formData.get("warehouseQty") ?? 0);
   const unitPriceRaw = String(formData.get("unitPrice") ?? "");
   const unitCostRaw = String(formData.get("unitCost") ?? "").trim();
 
   if (!brandId || !name || !unitPriceRaw) return { error: "Choose a brand, model name, and price." };
-  if (!Number.isFinite(warehouseQty) || warehouseQty < 0) return { error: "Invalid stock quantity." };
 
   const br = await prisma.brand.findUnique({ where: { id: brandId } });
   if (!br) return { error: "Invalid brand." };
@@ -65,7 +64,7 @@ export async function createProductAction(formData: FormData) {
       brand: br.name,
       name,
       description,
-      warehouseQty: Math.floor(warehouseQty),
+      warehouseQty: 0,
       unitPrice,
       unitCost,
     },
@@ -74,7 +73,7 @@ export async function createProductAction(formData: FormData) {
   await logActivity({
     type: "CATALOG_CREATE",
     title: `Added ${br.name} ${name}`,
-    detail: `${warehouseQty} units @ ${unitPrice.toString()}`,
+    detail: `Catalog item @ ${unitPrice.toString()}`,
     actorUserId: user.id,
   });
 
@@ -91,12 +90,10 @@ export async function updateProductAction(formData: FormData) {
   const brandFallback = String(formData.get("brand") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim() || null;
-  const warehouseQty = Number(formData.get("warehouseQty") ?? 0);
   const unitPriceRaw = String(formData.get("unitPrice") ?? "");
   const unitCostRaw = String(formData.get("unitCost") ?? "").trim();
 
   if (!id || !name || !unitPriceRaw) return { error: "Missing fields." };
-  if (!Number.isFinite(warehouseQty) || warehouseQty < 0) return { error: "Invalid stock quantity." };
 
   let brand: string;
   let brandId: string | null;
@@ -135,7 +132,6 @@ export async function updateProductAction(formData: FormData) {
       brand,
       name,
       description,
-      warehouseQty: Math.floor(warehouseQty),
       unitPrice,
       unitCost,
     },
@@ -149,6 +145,52 @@ export async function updateProductAction(formData: FormData) {
 
   revalidateCatalog();
   return { success: true };
+}
+
+export async function addProductStockAction(formData: FormData) {
+  const user = await requireOwner();
+  if (!user) return { error: "Unauthorized." };
+
+  const productId = String(formData.get("productId") ?? "");
+  const rawImeis = String(formData.get("imeis") ?? "");
+  if (!productId) return { error: "Missing product." };
+
+  const imeis = parseImeis(rawImeis);
+  if (!imeis.length) return { error: "Scan or enter at least one IMEI." };
+
+  const product = await prisma.catalogProduct.findUnique({ where: { id: productId } });
+  if (!product) return { error: "Product not found." };
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      for (const imei of imeis) {
+        await tx.productImei.create({
+          data: {
+            productId,
+            imei,
+            location: "WAREHOUSE",
+          },
+        });
+      }
+      await syncProductWarehouseQty(tx, productId);
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Could not add stock.";
+    if (msg.toLowerCase().includes("unique")) return { error: "One of those IMEIs already exists." };
+    return { error: msg };
+  }
+
+  await logActivity({
+    type: "WAREHOUSE_IN",
+    title: `Added stock for ${product.brand} ${product.name}`,
+    detail: `${imeis.length} IMEI${imeis.length === 1 ? "" : "s"}`,
+    actorUserId: user.id,
+  });
+
+  revalidateCatalog();
+  revalidatePath("/sr/warehouse");
+  revalidatePath("/owner/team");
+  return { success: true, count: imeis.length };
 }
 
 export async function updateShopCreditAction(formData: FormData) {

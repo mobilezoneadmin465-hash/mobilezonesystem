@@ -72,6 +72,7 @@ export async function createRetailOrderAction(formData: FormData) {
             productId: line.productId,
             quantity: line.quantity,
             unitPrice: p.unitPrice,
+            unitCost: p.unitCost,
           },
         });
       }
@@ -135,6 +136,7 @@ export async function createOwnerOrderForShopAction(formData: FormData) {
             productId: line.productId,
             quantity: line.quantity,
             unitPrice: p.unitPrice,
+            unitCost: p.unitCost,
           },
         });
       }
@@ -355,6 +357,7 @@ export async function updateRetailOpenOrderAction(formData: FormData) {
             productId: line.productId,
             quantity: line.quantity,
             unitPrice: p.unitPrice,
+            unitCost: p.unitCost,
           },
         });
       }
@@ -414,6 +417,7 @@ export async function retailConfirmOrderAction(formData: FormData) {
               productId: line.productId,
               quantity: line.quantity,
               unitPrice: p.unitPrice,
+            unitCost: p.unitCost,
             },
           });
         }

@@ -137,7 +137,7 @@ export async function computeWholesaleAnalytics(
     for (const line of order.lines) {
       const p = line.product;
       const lineRev = new Prisma.Decimal(line.unitPrice).mul(line.quantity);
-      const unitCost = new Prisma.Decimal(p.unitCost);
+      const unitCost = new Prisma.Decimal(line.unitCost);
       const lineCogs = unitCost.mul(line.quantity);
       const lineProfit = lineRev.minus(lineCogs);
 

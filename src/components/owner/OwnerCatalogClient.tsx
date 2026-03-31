@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { BrandDTO, OwnerCatalogProductDTO } from "@/lib/catalog-dto";
 import { createBrandAction, deleteBrandAction } from "@/server/actions/brand";
-import { createProductAction, updateProductAction } from "@/server/actions/catalog";
+import { addProductStockAction, createProductAction, updateProductAction } from "@/server/actions/catalog";
 import { formatMoney } from "@/lib/finance";
 
 type Props = {
@@ -16,6 +16,23 @@ export function OwnerCatalogClient({ initial, brands }: Props) {
   const router = useRouter();
   const [brandsOpen, setBrandsOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const totalUnits = useMemo(() => initial.reduce((sum, p) => sum + p.warehouseQty, 0), [initial]);
+  const stockAtSell = useMemo(
+    () =>
+      initial.reduce(
+        (sum, p) => sum + Number(p.unitPrice || "0") * p.warehouseQty,
+        0,
+      ),
+    [initial],
+  );
+  const stockAtCost = useMemo(
+    () =>
+      initial.reduce(
+        (sum, p) => sum + Number(p.unitCost || "0") * p.warehouseQty,
+        0,
+      ),
+    [initial],
+  );
 
   const grouped = useMemo(() => {
     const m = new Map<string, OwnerCatalogProductDTO[]>();
@@ -37,6 +54,27 @@ export function OwnerCatalogClient({ initial, brands }: Props) {
 
   return (
     <div className="space-y-8">
+      <section className="grid gap-3 sm:grid-cols-3">
+        <div className="app-card">
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Units in stock</p>
+          <p className="mt-2 text-2xl font-semibold text-white">{totalUnits}</p>
+        </div>
+        <div className="app-card">
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Current stock at sell price</p>
+          <p className="mt-2 text-2xl font-semibold text-teal-300">{formatMoney(stockAtSell)}</p>
+        </div>
+        <div className="app-card">
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Current stock at cost</p>
+          <p className="mt-2 text-2xl font-semibold text-white">{formatMoney(stockAtCost)}</p>
+        </div>
+      </section>
+
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 px-4 py-3 text-sm text-zinc-300">
+        Price edits change <span className="font-medium text-white">current stock value</span> and
+        <span className="font-medium text-white"> future orders</span>. Old revenue and old profit stay on the
+        original order prices.
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => setBrandsOpen(true)} className="app-btn-secondary py-2.5 text-sm">
@@ -72,7 +110,7 @@ export function OwnerCatalogClient({ initial, brands }: Props) {
       ) : null}
 
       <div className="space-y-6">
-        <h2 className="text-sm font-semibold text-zinc-400">Warehouse catalogue</h2>
+        <h2 className="text-sm font-semibold text-zinc-400">Current catalogue</h2>
         {grouped.length === 0 ? (
           <p className="text-sm text-zinc-500">No products.</p>
         ) : (
@@ -253,21 +291,17 @@ function AddProductModal({
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="text-xs text-zinc-500">
-                Warehouse pieces
-                <input name="warehouseQty" type="number" min={0} defaultValue={0} required className="app-input mt-1" />
-              </label>
-              <label className="text-xs text-zinc-500">
-                Unit price (BDT)
+                Sell price now (BDT)
                 <input name="unitPrice" type="text" required className="app-input mt-1" placeholder="35000" />
               </label>
-              <label className="text-xs text-zinc-500 sm:col-span-2">
-                Cost price (BDT, optional)
-                <input name="unitCost" type="text" className="app-input mt-1" placeholder="31000 — for profit analytics" />
+              <label className="text-xs text-zinc-500">
+                Cost price now (BDT, optional)
+                <input name="unitCost" type="text" className="app-input mt-1" placeholder="31000" />
               </label>
             </div>
           </div>
           <button type="submit" disabled={pending} className="app-btn mt-6 w-full disabled:opacity-50">
-            {pending ? "Saving…" : "Add to warehouse"}
+            {pending ? "Saving…" : "Create product"}
           </button>
         </form>
       </div>
@@ -284,8 +318,69 @@ function CatalogRow({
   brands: BrandDTO[];
   onSaved: () => void;
 }) {
+  const [stockOpen, setStockOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+
+  return (
+    <li className="app-card space-y-3">
+      {stockOpen ? (
+        <AddStockModal
+          product={p}
+          onClose={() => setStockOpen(false)}
+          onDone={() => {
+            setStockOpen(false);
+            onSaved();
+          }}
+        />
+      ) : null}
+      {editOpen ? (
+        <EditProductModal
+          product={p}
+          brands={brands}
+          onClose={() => setEditOpen(false)}
+          onDone={() => {
+            setEditOpen(false);
+            onSaved();
+          }}
+        />
+      ) : null}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="font-medium text-white">
+            {p.brand} {p.name}
+          </p>
+          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-500">
+            <span>{p.warehouseQty} in stock</span>
+            <span>Sell {formatMoney(p.unitPrice)}</span>
+            {Number(p.unitCost) > 0 ? <span>Cost {formatMoney(p.unitCost)}</span> : null}
+          </div>
+          {p.description ? <p className="mt-2 text-sm text-zinc-400">{p.description}</p> : null}
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <button type="button" onClick={() => setEditOpen(true)} className="app-btn-secondary py-2 text-xs sm:text-sm">
+            Edit
+          </button>
+          <button type="button" onClick={() => setStockOpen(true)} className="app-btn py-2 text-xs sm:text-sm">
+            Add stock
+          </button>
+        </div>
+      </div>
+    </li>
+  );
+}
+
+function EditProductModal({
+  product: p,
+  brands,
+  onClose,
+  onDone,
+}: {
+  product: OwnerCatalogProductDTO;
+  brands: BrandDTO[];
+  onClose: () => void;
+  onDone: () => void;
+}) {
   const [err, setErr] = useState<string | null>(null);
-  const [ok, setOk] = useState(false);
   const [pending, start] = useTransition();
   const [useLegacyBrand, setUseLegacyBrand] = useState(!p.brandId);
 
@@ -294,85 +389,451 @@ function CatalogRow({
     const form = e.currentTarget;
     const fd = new FormData(form);
     setErr(null);
-    setOk(false);
     start(async () => {
       const r = await updateProductAction(fd);
       if (r && "error" in r && r.error) setErr(r.error);
-      else {
-        setOk(true);
-        onSaved();
-      }
+      else onDone();
     });
   }
 
   return (
-    <li className="app-card space-y-3">
-      <form onSubmit={save} className="space-y-3">
-        <input type="hidden" name="id" value={p.id} />
-        <div className="flex flex-wrap items-start justify-between gap-2">
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true">
+      <button type="button" className="absolute inset-0 bg-black/70" aria-label="Close" onClick={onClose} />
+      <div className="relative flex max-h-[min(92vh,720px)] w-full max-w-md flex-col rounded-t-2xl border border-zinc-700 bg-zinc-900 shadow-2xl sm:rounded-2xl">
+        <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+          <h2 className="text-lg font-semibold text-white">Edit product</h2>
+          <button type="button" onClick={onClose} className="text-sm text-zinc-400 hover:text-white">
+            Close
+          </button>
+        </div>
+        <form onSubmit={save} className="flex-1 overflow-y-auto px-4 py-4">
+          <input type="hidden" name="id" value={p.id} />
+          {err ? <p className="mb-3 text-sm text-red-400">{err}</p> : null}
+          <div className="space-y-4">
+            <label className="text-xs text-zinc-500">
+              Brand
+              <select
+                name="brandId"
+                defaultValue={p.brandId ?? ""}
+                className="app-input mt-1"
+                onChange={(e) => setUseLegacyBrand(e.target.value === "")}
+              >
+                <option value="">Other (type name)</option>
+                {brands.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {useLegacyBrand ? (
+              <label className="text-xs text-zinc-500">
+                Brand name
+                <input name="brand" defaultValue={p.brand} required className="app-input mt-1" />
+              </label>
+            ) : null}
+            <label className="text-xs text-zinc-500">
+              Model name
+              <input name="name" defaultValue={p.name} required className="app-input mt-1" />
+            </label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="text-xs text-zinc-500">
+                New sell price (BDT)
+                <input name="unitPrice" defaultValue={p.unitPrice} required className="app-input mt-1" />
+              </label>
+              <label className="text-xs text-zinc-500">
+                New cost price (BDT)
+                <input name="unitCost" defaultValue={p.unitCost} className="app-input mt-1" placeholder="0" />
+              </label>
+            </div>
+            <label className="text-xs text-zinc-500">
+              Note
+              <input name="description" defaultValue={p.description ?? ""} className="app-input mt-1" />
+            </label>
+          </div>
+          {!useLegacyBrand ? <input type="hidden" name="brand" value="" /> : null}
+          <button type="submit" disabled={pending} className="app-btn mt-6 w-full disabled:opacity-50">
+            {pending ? "Saving…" : "Save changes"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function AddStockModal({
+  product,
+  onClose,
+  onDone,
+}: {
+  product: OwnerCatalogProductDTO;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [mode, setMode] = useState<"scanner" | "camera" | "manual">("scanner");
+  const [input, setInput] = useState("");
+  const [list, setList] = useState<string[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+  const [cameraStatus, setCameraStatus] = useState<string>("Ready");
+  const [pending, start] = useTransition();
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const lastScanRef = useRef<Map<string, number>>(new Map());
+  const zxingControlsRef = useRef<{ stop: () => void } | null>(null);
+  const scannerBufferRef = useRef("");
+  const scannerTimerRef = useRef<number | null>(null);
+
+  function normalize(raw: string) {
+    return raw.replace(/\D/g, "").trim();
+  }
+
+  const addOne = useCallback((raw: string) => {
+    const imei = normalize(raw);
+    if (!imei) return;
+    if (imei.length < 8) {
+      setErr("Invalid IMEI.");
+      return;
+    }
+    let added = false;
+    setList((prev) => {
+      if (prev.includes(imei)) return prev;
+      added = true;
+      return [...prev, imei];
+    });
+    setErr(added ? null : "Already scanned.");
+  }, []);
+
+  useEffect(() => {
+    if (mode !== "camera") return;
+
+    let cancelled = false;
+
+    async function startCamera() {
+      if (!window.isSecureContext) {
+        setErr("Phone camera needs HTTPS or localhost. Open this app on a secure URL.");
+        setCameraStatus("HTTPS required");
+        return;
+      }
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setErr("This browser cannot access the camera here.");
+        setCameraStatus("Camera unavailable");
+        return;
+      }
+
+      const DetectorCtor = (
+        window as Window & {
+          BarcodeDetector?: new (opts?: {
+            formats?: string[];
+          }) => { detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue?: string }>> };
+        }
+      ).BarcodeDetector;
+
+      try {
+        setErr(null);
+        setCameraStatus("Starting camera…");
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        });
+        if (cancelled) {
+          for (const track of stream.getTracks()) track.stop();
+          return;
+        }
+        streamRef.current = stream;
+        const video = videoRef.current;
+        if (!video) return;
+        video.srcObject = stream;
+        await video.play();
+        const onDecoded = (raw: string) => {
+          const value = raw.trim();
+          if (!value) return;
+          const now = Date.now();
+          const last = lastScanRef.current.get(value) ?? 0;
+          if (now - last < 1200) return;
+          lastScanRef.current.set(value, now);
+          addOne(value);
+        };
+
+        if (DetectorCtor) {
+          setCameraStatus("Point the camera at the barcode");
+          const detector = new DetectorCtor({
+            formats: ["ean_13", "ean_8", "code_128", "upc_a", "upc_e", "qr_code"],
+          });
+
+          const tick = async () => {
+            if (cancelled) return;
+            try {
+              if (video.readyState >= 2) {
+                const results = await detector.detect(video);
+                for (const result of results) {
+                  const raw = result.rawValue?.trim();
+                  if (!raw) continue;
+                  onDecoded(raw);
+                }
+              }
+            } catch {
+              // Keep scanning even if one detect cycle fails.
+            }
+            rafRef.current = window.setTimeout(() => {
+              void tick();
+            }, 220) as unknown as number;
+          };
+
+          void tick();
+          return;
+        }
+
+        setCameraStatus("Using fallback scanner…");
+        const { BrowserMultiFormatReader } = await import("@zxing/browser");
+        const reader = new BrowserMultiFormatReader();
+        const controls = await reader.decodeFromVideoDevice(undefined, video, (result) => {
+          if (result?.getText()) onDecoded(result.getText());
+        });
+        zxingControlsRef.current = controls;
+        setCameraStatus("Point the camera at the barcode");
+      } catch (e) {
+        const msg =
+          e instanceof Error ? e.message.toLowerCase() : "";
+        if (msg.includes("permission") || msg.includes("denied") || msg.includes("notallowed")) {
+          setErr("Camera permission was denied.");
+          setCameraStatus("Permission denied");
+          return;
+        }
+        if (msg.includes("secure") || msg.includes("https")) {
+          setErr("Phone camera needs HTTPS or localhost. Open this app on a secure URL.");
+          setCameraStatus("HTTPS required");
+          return;
+        }
+        if (msg.includes("notfound") || msg.includes("devices not found")) {
+          setErr("No camera was found on this device.");
+          setCameraStatus("No camera found");
+          return;
+        }
+        setErr("Could not open phone camera.");
+        setCameraStatus("Camera blocked");
+      }
+    }
+
+    void startCamera();
+
+    return () => {
+      cancelled = true;
+      if (rafRef.current !== null) {
+        window.clearTimeout(rafRef.current);
+        rafRef.current = null;
+      }
+      if (streamRef.current) {
+        for (const track of streamRef.current.getTracks()) track.stop();
+        streamRef.current = null;
+      }
+      if (zxingControlsRef.current) {
+        zxingControlsRef.current.stop();
+        zxingControlsRef.current = null;
+      }
+    };
+  }, [addOne, mode]);
+
+  useEffect(() => {
+    if (mode !== "scanner") return;
+
+    function flushScannerBuffer() {
+      const raw = scannerBufferRef.current.trim();
+      if (raw) addOne(raw);
+      scannerBufferRef.current = "";
+      if (scannerTimerRef.current !== null) {
+        window.clearTimeout(scannerTimerRef.current);
+        scannerTimerRef.current = null;
+      }
+    }
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        flushScannerBuffer();
+        return;
+      }
+      if (e.key === "Tab" || e.key === "Shift" || e.key === "Control" || e.key === "Alt" || e.key === "Meta") {
+        return;
+      }
+      if (e.key.length !== 1) return;
+
+      scannerBufferRef.current += e.key;
+      if (scannerTimerRef.current !== null) {
+        window.clearTimeout(scannerTimerRef.current);
+      }
+      scannerTimerRef.current = window.setTimeout(() => {
+        flushScannerBuffer();
+      }, 250) as unknown as number;
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      scannerBufferRef.current = "";
+      if (scannerTimerRef.current !== null) {
+        window.clearTimeout(scannerTimerRef.current);
+        scannerTimerRef.current = null;
+      }
+    };
+  }, [addOne, mode]);
+
+  function submitAll() {
+    if (!list.length) {
+      setErr("Scan at least one IMEI.");
+      return;
+    }
+    const fd = new FormData();
+    fd.set("productId", product.id);
+    fd.set("imeis", list.join("\n"));
+    setErr(null);
+    start(async () => {
+      const r = await addProductStockAction(fd);
+      if (r && "error" in r && r.error) setErr(r.error);
+      else onDone();
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true">
+      <button type="button" className="absolute inset-0 bg-black/70" aria-label="Close" onClick={onClose} />
+      <div className="relative flex max-h-[min(92vh,720px)] w-full max-w-lg flex-col rounded-t-2xl border border-zinc-700 bg-zinc-900 shadow-2xl sm:rounded-2xl">
+        <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
           <div>
-            <p className="font-medium text-white">
-              {p.brand} {p.name}
-            </p>
+            <h2 className="text-lg font-semibold text-white">Add stock</h2>
             <p className="text-xs text-zinc-500">
-              Sell {formatMoney(p.unitPrice)}
-              {Number(p.unitCost) > 0 ? (
-                <span className="text-zinc-600"> · Cost {formatMoney(p.unitCost)}</span>
-              ) : null}
+              {product.brand} {product.name}
             </p>
           </div>
+          <button type="button" onClick={onClose} className="text-sm text-zinc-400 hover:text-white">
+            Close
+          </button>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <label className="text-xs text-zinc-500">
-            Brand
-            <select
-              name="brandId"
-              defaultValue={p.brandId ?? ""}
-              className="app-input mt-1"
-              onChange={(e) => setUseLegacyBrand(e.target.value === "")}
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          <div className="mb-4 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setMode("scanner")}
+              className={`rounded-full px-4 py-2 text-sm ${mode === "scanner" ? "bg-teal-600 text-white" : "bg-zinc-800 text-zinc-400"}`}
             >
-              <option value="">Other (type name)</option>
-              {brands.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          {useLegacyBrand ? (
-            <label className="text-xs text-zinc-500">
-              Brand name
-              <input name="brand" defaultValue={p.brand} required className="app-input mt-1" />
-            </label>
-          ) : null}
-          <label className="text-xs text-zinc-500">
-            Model name
-            <input name="name" defaultValue={p.name} required className="app-input mt-1" />
-          </label>
-          <label className="text-xs text-zinc-500">
-            Price (BDT)
-            <input name="unitPrice" defaultValue={p.unitPrice} required className="app-input mt-1" />
-          </label>
-          <label className="text-xs text-zinc-500">
-            Cost (BDT)
-            <input name="unitCost" defaultValue={p.unitCost} className="app-input mt-1" placeholder="0" />
-          </label>
+              Barcode scanner
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("camera")}
+              className={`rounded-full px-4 py-2 text-sm ${mode === "camera" ? "bg-teal-600 text-white" : "bg-zinc-800 text-zinc-400"}`}
+            >
+              Phone camera
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("manual")}
+              className={`rounded-full px-4 py-2 text-sm ${mode === "manual" ? "bg-teal-600 text-white" : "bg-zinc-800 text-zinc-400"}`}
+            >
+              Manual entry
+            </button>
+          </div>
+
+          {mode === "scanner" ? (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-4" />
+            </div>
+          ) : mode === "camera" ? (
+            <div className="space-y-3">
+              <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-black">
+                <video ref={videoRef} className="aspect-[3/4] w-full object-cover" playsInline muted />
+              </div>
+              <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-3 py-2 text-sm text-zinc-300">
+                {cameraStatus}
+              </div>
+              <label className="block text-xs text-zinc-500">
+                Manual add while camera is open
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addOne(input);
+                      setInput("");
+                    }
+                  }}
+                  inputMode="numeric"
+                  className="app-input mt-1"
+                  placeholder="Type IMEI and press Enter"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  addOne(input);
+                  setInput("");
+                }}
+                className="app-btn-secondary py-2 text-sm"
+              >
+                Add typed IMEI
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <label className="block text-xs text-zinc-500">
+                IMEIs
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  className="app-input mt-1 min-h-40"
+                  placeholder="One IMEI per line"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  const parts = input.split(/[\r\n,;\s]+/);
+                  for (const part of parts) addOne(part);
+                  setInput("");
+                }}
+                className="app-btn-secondary py-2 text-sm"
+              >
+                Add entered IMEIs
+              </button>
+            </div>
+          )}
+
+          {err ? <p className="mt-3 text-sm text-red-400">{err}</p> : null}
+
+          <div className="mt-5 rounded-xl border border-zinc-800 bg-zinc-950/70 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium text-white">Count</p>
+              <p className="text-2xl font-semibold text-teal-300">{list.length}</p>
+            </div>
+          </div>
+
+          <ul className="mt-4 max-h-60 space-y-2 overflow-y-auto">
+            {list.map((imei) => (
+              <li key={imei} className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-300">
+                <span className="font-mono">{imei}</span>
+                <button
+                  type="button"
+                  onClick={() => setList((prev) => prev.filter((x) => x !== imei))}
+                  className="text-xs text-red-400"
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
-        <label className="text-xs text-zinc-500">
-          Warehouse count
-          <input name="warehouseQty" type="number" min={0} defaultValue={p.warehouseQty} required className="app-input mt-1" />
-        </label>
-        <label className="text-xs text-zinc-500">
-          Note
-          <input name="description" defaultValue={p.description ?? ""} className="app-input mt-1" />
-        </label>
-        {!useLegacyBrand ? <input type="hidden" name="brand" value="" /> : null}
-        {err ? <p className="text-sm text-red-400">{err}</p> : null}
-        {ok ? <p className="text-sm text-teal-400">Saved.</p> : null}
-        <button type="submit" disabled={pending} className="app-btn-secondary text-sm disabled:opacity-50">
-          {pending ? "Saving…" : "Update"}
-        </button>
-      </form>
-    </li>
+        <div className="border-t border-zinc-800 px-4 py-3">
+          <button type="button" onClick={submitAll} disabled={pending} className="app-btn w-full disabled:opacity-50">
+            {pending ? "Saving…" : "Save stock"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

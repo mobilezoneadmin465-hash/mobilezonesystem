@@ -18,7 +18,9 @@ export default async function OwnerCatalogPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-white">{t("owner.catalog.warehousePageTitle")}</h1>
+      <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
+        {t("owner.catalog.warehousePageTitle")}
+      </h1>
       <OwnerCatalogClient initial={initial} brands={brandDtos} />
     </div>
   );
