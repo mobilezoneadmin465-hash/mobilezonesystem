@@ -522,14 +522,6 @@ function AddStockModal({
         return;
       }
 
-      const DetectorCtor = (
-        window as Window & {
-          BarcodeDetector?: new (opts?: {
-            formats?: string[];
-          }) => { detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue?: string }>> };
-        }
-      ).BarcodeDetector;
-
       try {
         setErr(null);
         setCameraStatus("Starting camera…");
@@ -559,44 +551,13 @@ function AddStockModal({
           lastScanRef.current.set(value, now);
           addOne(value);
         };
-
-        if (DetectorCtor) {
-          setCameraStatus("Point the camera at the barcode");
-          const detector = new DetectorCtor({
-            formats: ["ean_13", "ean_8", "code_128", "upc_a", "upc_e", "qr_code"],
-          });
-
-          const tick = async () => {
-            if (cancelled) return;
-            try {
-              if (video.readyState >= 2) {
-                const results = await detector.detect(video);
-                for (const result of results) {
-                  const raw = result.rawValue?.trim();
-                  if (!raw) continue;
-                  onDecoded(raw);
-                }
-              }
-            } catch {
-              // Keep scanning even if one detect cycle fails.
-            }
-            rafRef.current = window.setTimeout(() => {
-              void tick();
-            }, 220) as unknown as number;
-          };
-
-          void tick();
-          return;
-        }
-
-        setCameraStatus("Using fallback scanner…");
         const { BrowserMultiFormatReader } = await import("@zxing/browser");
         const reader = new BrowserMultiFormatReader();
+        setCameraStatus("Point the camera at the barcode");
         const controls = await reader.decodeFromVideoDevice(undefined, video, (result) => {
           if (result?.getText()) onDecoded(result.getText());
         });
         zxingControlsRef.current = controls;
-        setCameraStatus("Point the camera at the barcode");
       } catch (e) {
         const msg =
           e instanceof Error ? e.message.toLowerCase() : "";
