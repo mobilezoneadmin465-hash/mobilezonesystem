@@ -6,6 +6,7 @@ import type { CatalogProductDTO } from "@/lib/catalog-dto";
 import { formatMoney } from "@/lib/finance";
 import { createOwnerOrderForShopAction, createRetailOrderAction } from "@/server/actions/orders";
 import { useLanguage } from "@/components/LanguageContext";
+import { closeModal, openModal } from "@/lib/modal-manager";
 
 type ShopOption = { id: string; name: string };
 
@@ -52,6 +53,9 @@ export function StorefrontCart({ products, mode, shops = [], initialShopId = "" 
     const anyOverlay = Boolean(picker || cartOpen);
     if (!anyOverlay) return;
 
+    if (picker) openModal("cart-qty-modal");
+    if (cartOpen) openModal("cart-panel-modal");
+
     const prevBodyOverflow = document.body.style.overflow;
     const prevHtmlOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = "hidden";
@@ -59,6 +63,8 @@ export function StorefrontCart({ products, mode, shops = [], initialShopId = "" 
     return () => {
       document.body.style.overflow = prevBodyOverflow;
       document.documentElement.style.overflow = prevHtmlOverflow;
+      closeModal("cart-qty-modal");
+      closeModal("cart-panel-modal");
     };
   }, [picker, cartOpen]);
 
@@ -345,7 +351,7 @@ export function StorefrontCart({ products, mode, shops = [], initialShopId = "" 
       {/* Quantity modal: large +/− and typed amount */}
       {picker ? (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center pb-[96px] sm:items-center sm:p-4"
+          className="fixed inset-0 z-[90] flex items-end justify-center overflow-y-auto p-4 sm:items-center sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="qty-modal-title"
@@ -356,7 +362,7 @@ export function StorefrontCart({ products, mode, shops = [], initialShopId = "" 
             aria-label="Close"
             onClick={closePicker}
           />
-          <div className="relative w-full max-w-md rounded-t-3xl border border-zinc-700 bg-zinc-900 p-6 shadow-2xl sm:rounded-2xl">
+          <div className="relative w-full max-w-md max-h-[min(90dvh,720px)] overflow-y-auto rounded-t-3xl border border-zinc-700 bg-zinc-900 p-6 shadow-2xl sm:rounded-2xl">
             <h3 id="qty-modal-title" className="text-lg font-semibold text-white">
               {picker.brand} {picker.name}
             </h3>
@@ -410,7 +416,7 @@ export function StorefrontCart({ products, mode, shops = [], initialShopId = "" 
 
       {/* Cart panel: slide-over on desktop, bottom sheet on mobile */}
       {cartOpen ? (
-        <div className="fixed inset-0 z-40" role="dialog" aria-modal="true" aria-labelledby="cart-panel-title">
+        <div className="fixed inset-0 z-[90]" role="dialog" aria-modal="true" aria-labelledby="cart-panel-title">
           <button
             type="button"
             className="absolute inset-0 bg-black/60"
@@ -419,7 +425,7 @@ export function StorefrontCart({ products, mode, shops = [], initialShopId = "" 
           />
           <div
             id="cart-panel-title"
-            className="absolute inset-0 flex flex-col justify-end pb-[96px] sm:flex-row sm:pb-0 sm:items-stretch sm:justify-end"
+            className="absolute inset-0 flex flex-col justify-end p-4 sm:flex-row sm:p-0 sm:pb-0 sm:items-stretch sm:justify-end"
           >
             <div className="flex h-[min(92vh,720px)] w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-zinc-800 bg-zinc-950 shadow-2xl sm:h-full sm:rounded-none sm:border-y-0 sm:border-l sm:border-r-0">
               {CartPanel}

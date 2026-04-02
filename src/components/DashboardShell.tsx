@@ -8,6 +8,7 @@ import { useLanguage } from "@/components/LanguageContext";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { NavTabIcon } from "@/components/mobile-nav-icons";
 import { SignOutButton } from "@/components/SignOutButton";
+import { useAnyModalOpen } from "@/lib/modal-manager";
 
 export type NavItem = { href: string };
 
@@ -67,6 +68,8 @@ export function DashboardShell({
   const navLinkMobile = isApp ? "bg-zinc-800 text-zinc-200" : "bg-slate-100 text-slate-700";
   const headerBorder = isApp ? "border-zinc-800/80 bg-zinc-950/85 backdrop-blur-xl" : "border-slate-200 bg-white";
   const activeTab = isApp ? activeNavHref(pathname, nav) : null;
+  const anyModalOpen = useAnyModalOpen();
+  const hideChrome = anyModalOpen;
 
   /** Main scroll area padding; tab bar is in layout flow on mobile (no extra spacer). */
   const mainPadApp = "px-4 pt-4 pb-24 md:p-8 md:pb-8";
@@ -89,7 +92,7 @@ export function DashboardShell({
   return (
     <div className={`${shell} ${isApp ? "" : "flex flex-col"}`}>
       <div className={`flex min-h-0 flex-1 ${isApp ? "min-h-0" : ""}`}>
-        <aside className={`hidden w-60 flex-shrink-0 flex-col border-r md:flex ${aside}`}>
+        <aside className={`hidden w-60 flex-shrink-0 flex-col border-r md:flex ${hideChrome ? "hidden" : aside}`}>
           <div className={`border-b px-5 py-4 ${isApp ? "border-zinc-800" : "border-slate-100"}`}>
             <p className={`text-xs font-semibold uppercase tracking-wider ${brand}`}>{t("shell.brand")}</p>
             <p className={`mt-1 text-lg font-semibold ${titleCls}`}>{title}</p>
@@ -116,9 +119,10 @@ export function DashboardShell({
         </aside>
 
         <div className={contentCol}>
-          <header
-            className={`z-30 flex shrink-0 items-start justify-between gap-3 border-b px-4 py-3 md:sticky md:top-0 md:hidden ${headerBorder}`}
-          >
+          {!hideChrome ? (
+            <header
+              className={`z-30 flex shrink-0 items-start justify-between gap-3 border-b px-4 py-3 md:sticky md:top-0 md:hidden ${headerBorder}`}
+            >
             <div className={`min-w-0 flex-1 ${isApp ? "pt-[env(safe-area-inset-top,0px)]" : ""}`}>
               <p className={`hidden text-[10px] font-semibold uppercase tracking-wider sm:block ${brand}`}>
                 {t("shell.brand")}
@@ -134,9 +138,10 @@ export function DashboardShell({
               <LanguageToggle variant="shell" />
               <SignOutButton variant={isApp ? "app" : "light"} />
             </div>
-          </header>
+            </header>
+          ) : null}
 
-          {!isApp ? (
+          {!isApp && !anyModalOpen ? (
             <div className="shrink-0 border-b border-slate-200 bg-white md:hidden">
               <nav className="flex flex-wrap justify-center gap-2 px-3 py-2.5 pb-3">
                 {nav.map((item) => (
@@ -161,7 +166,7 @@ export function DashboardShell({
             {children}
           </main>
 
-          {isApp ? (
+          {isApp && !anyModalOpen ? (
             <nav
               className="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-60 shrink-0 border-t border-zinc-800 bg-zinc-950 shadow-[0_-6px_28px_rgba(0,0,0,0.55)] md:hidden"
               aria-label="Main"

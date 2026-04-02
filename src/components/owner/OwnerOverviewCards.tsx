@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "@/components/LanguageContext";
 import { formatMoney } from "@/lib/finance";
+import { closeModal, openModal } from "@/lib/modal-manager";
 
 export type WarehouseLineDTO = {
   brand: string;
@@ -123,6 +124,12 @@ export function OwnerOverviewCards({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, close]);
 
+  useEffect(() => {
+    if (!open) return;
+    openModal("overview-modal");
+    return () => closeModal("overview-modal");
+  }, [open]);
+
   return (
     <>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -141,7 +148,7 @@ export function OwnerOverviewCards({
 
       {open ? (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center pb-[96px] sm:items-center sm:p-4"
+          className="fixed inset-0 z-[80] flex items-end justify-center overflow-y-auto p-4 sm:items-center sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="overview-modal-title"

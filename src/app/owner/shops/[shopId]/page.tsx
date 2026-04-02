@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { notFound, redirect } from "next/navigation";
 import { getShopDue } from "@/lib/finance";
 import { fullOrderInclude, toShopOrderListDTO } from "@/lib/order-dto";
 import { prisma } from "@/lib/prisma";
@@ -8,6 +9,7 @@ import { OwnerOrderCard } from "@/components/owner/OwnerOrderActions";
 import { OwnerShopCreditForm } from "@/components/owner/OwnerShopCreditForm";
 import { OwnerShopRetailLogins } from "@/components/owner/OwnerShopRetailLogins";
 import { getT } from "@/lib/i18n/server";
+import { authOptions } from "@/lib/auth";
 
 type Props = { params: Promise<{ shopId: string }> };
 
@@ -15,13 +17,16 @@ export default async function OwnerShopDetailPage({ params }: Props) {
   const t = await getT();
   const { shopId } = await params;
 
+  const session = await getServerSession(authOptions);
+  if (!session?.user || session.user.role !== "OWNER") redirect("/login");
+
   const shop = await prisma.shop.findUnique({ where: { id: shopId } });
   if (!shop) notFound();
 
   const [due, activeRaw, historyRaw, salesReps, retailUsers] = await Promise.all([
     getShopDue(shopId),
     prisma.shopOrder.findMany({
-      where: { shopId, status: { in: ["OPEN", "ASSIGNED"] } },
+      where: { shopId, status: { in: ["OPEN", "OWNER_ACCEPTED", "OWNER_PREPARED", "ASSIGNED"] } },
       orderBy: { createdAt: "desc" },
       take: 40,
       include: fullOrderInclude,
@@ -81,7 +86,7 @@ export default async function OwnerShopDetailPage({ params }: Props) {
         </div>
         <ul className="space-y-4">
             {activeOrders.map((o) => (
-              <OwnerOrderCard key={o.id} mode="active" order={o} salesReps={salesRepsApproved} />
+              <OwnerOrderCard key={o.id} mode="active" order={o} salesReps={salesRepsApproved} viewerId={session.user.id} />
           ))}
         </ul>
         {activeOrders.length === 0 ? <p className="text-sm text-zinc-500">{t("owner.shops.noActive")}</p> : null}
@@ -90,7 +95,7 @@ export default async function OwnerShopDetailPage({ params }: Props) {
           <h3 className="text-sm font-bold uppercase tracking-wide text-zinc-400">{t("owner.shops.recentPast")}</h3>
           <ul className="mt-3 space-y-4">
             {historyOrders.map((o) => (
-              <OwnerOrderCard key={o.id} mode="archive" order={o} salesReps={salesRepsApproved} />
+              <OwnerOrderCard key={o.id} mode="archive" order={o} salesReps={salesRepsApproved} viewerId={session.user.id} />
             ))}
           </ul>
           {historyOrders.length === 0 ? (

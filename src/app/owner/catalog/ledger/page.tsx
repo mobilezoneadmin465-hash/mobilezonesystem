@@ -4,12 +4,42 @@ import { isUnspecifiedImei } from "@/lib/imei-stock";
 import { OwnerImeiLedgerClient } from "@/components/owner/OwnerImeiLedgerClient";
 
 export default async function OwnerImeiLedgerPage() {
-  const imeis = await prisma.productImei.findMany({
-    include: {
-      product: { include: { brandRel: true } },
-    },
-    orderBy: [{ product: { brand: "asc" } }, { product: { name: "asc" } }, { createdAt: "desc" }],
-  });
+  const imeis = await prisma.$queryRaw<
+    Array<{
+      id: string;
+      imeiActual: string;
+      location: string;
+      srId: string | null;
+      shopId: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+      brand: string;
+      brandRelName: string | null;
+      model: string;
+      unitPrice: string;
+      unitCost: string;
+      unitMrp: string;
+    }>
+  >`
+    SELECT
+      pi."id" AS "id",
+      pi."imei" AS "imeiActual",
+      pi."location" AS "location",
+      pi."srId" AS "srId",
+      pi."shopId" AS "shopId",
+      pi."createdAt" AS "createdAt",
+      pi."updatedAt" AS "updatedAt",
+      cp."brand" AS "brand",
+      br."name" AS "brandRelName",
+      cp."name" AS "model",
+      cp."unitPrice"::text AS "unitPrice",
+      cp."unitCost"::text AS "unitCost",
+      cp."unitMrp"::text AS "unitMrp"
+    FROM "ProductImei" pi
+    INNER JOIN "CatalogProduct" cp ON cp."id" = pi."productId"
+    LEFT JOIN "Brand" br ON br."id" = cp."brandId"
+    ORDER BY cp."brand" ASC, cp."name" ASC, pi."createdAt" DESC
+  `;
 
   const srIds = Array.from(new Set(imeis.map((r) => r.srId).filter((v): v is string => Boolean(v))));
   const shopIds = Array.from(new Set(imeis.map((r) => r.shopId).filter((v): v is string => Boolean(v))));
@@ -24,11 +54,11 @@ export default async function OwnerImeiLedgerPage() {
 
   const rows = imeis.map((row) => ({
     id: row.id,
-    brand: row.product.brandRel?.name ?? row.product.brand,
-    model: row.product.name,
-    imeiActual: row.imei,
-    imei: isUnspecifiedImei(row.imei) ? "unspecified imei" : row.imei,
-    isPlaceholder: isUnspecifiedImei(row.imei),
+    brand: row.brandRelName ?? row.brand,
+    model: row.model,
+    imeiActual: row.imeiActual,
+    imei: isUnspecifiedImei(row.imeiActual) ? "unspecified imei" : row.imeiActual,
+    isPlaceholder: isUnspecifiedImei(row.imeiActual),
     status:
       row.location === "DELIVERED"
         ? ("SOLD" as const)
@@ -36,8 +66,9 @@ export default async function OwnerImeiLedgerPage() {
           ? ("IN_TRANSIT" as const)
           : ("IN_STOCK" as const),
     location: row.location.replace(/_/g, " "),
-    sellPrice: row.product.unitPrice.toString(),
-    costPrice: row.product.unitCost.toString(),
+    rpPrice: row.unitPrice,
+    dpPrice: row.unitCost,
+    mrpPrice: row.unitMrp,
     addedAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     srName: row.srId ? srMap.get(row.srId) ?? null : null,

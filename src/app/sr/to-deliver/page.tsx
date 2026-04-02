@@ -15,7 +15,7 @@ export default async function SrToDeliverListPage() {
   if (!session?.user || session.user.role !== "SR") redirect("/login");
 
   const raw = await prisma.shopOrder.findMany({
-    where: { assignedSrId: session.user.id, status: "ASSIGNED" },
+    where: { assignedSrId: session.user.id, status: { in: ["ASSIGNED", "OWNER_PREPARED"] } },
     orderBy: { assignedAt: "desc" },
     include: fullOrderInclude,
   });

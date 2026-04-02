@@ -19,7 +19,7 @@ export default async function SrDashboardPage() {
 
   const [assignedOrdersRaw, inventory, pendingDeliveries] = await Promise.all([
     prisma.shopOrder.findMany({
-      where: { assignedSrId: userId, status: "ASSIGNED" },
+      where: { assignedSrId: userId, status: { in: ["ASSIGNED", "OWNER_PREPARED"] } },
       orderBy: { assignedAt: "desc" },
       take: 20,
       include: fullOrderInclude,

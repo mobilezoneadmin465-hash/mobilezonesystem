@@ -58,7 +58,7 @@ export default async function OwnerSummaryPage({
     }),
     prisma.shopDelivery.findMany({
       where: {
-        status: "CONFIRMED",
+        status: { in: ["CONFIRMED", "CONFIRMED_WITH_IMEIS"] },
         confirmedAt: { gte: start, lte: end },
       },
       orderBy: { confirmedAt: "desc" },

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { formatMoney } from "@/lib/finance";
 import { resolveUnspecifiedImeisAction } from "@/server/actions/catalog";
 import { normalizeImei } from "@/lib/imei-stock";
+import { closeModal, openModal } from "@/lib/modal-manager";
 
 type Row = {
   id: string;
@@ -15,8 +16,9 @@ type Row = {
   isPlaceholder: boolean;
   status: "SOLD" | "IN_STOCK" | "IN_TRANSIT";
   location: string;
-  sellPrice: string;
-  costPrice: string;
+  rpPrice: string;
+  dpPrice: string;
+  mrpPrice: string;
   addedAt: string;
   updatedAt: string;
   srName: string | null;
@@ -35,6 +37,7 @@ export function OwnerImeiLedgerClient({ rows, brands }: Props) {
   const [status, setStatus] = useState<"ALL" | Row["status"]>("ALL");
   const [model, setModel] = useState("ALL");
   const [resolveOpen, setResolveOpen] = useState(false);
+  const [resolvePlaceholderIds, setResolvePlaceholderIds] = useState<string[]>([]);
   const [resolveInput, setResolveInput] = useState("");
   const [resolveImeiList, setResolveImeiList] = useState<string[]>([]);
   const [resolveMode, setResolveMode] = useState<"scanner" | "camera" | "manual">("scanner");
@@ -54,6 +57,7 @@ export function OwnerImeiLedgerClient({ rows, brands }: Props) {
   // Lock background scroll while resolve modal is open.
   useEffect(() => {
     if (!resolveOpen) return;
+    openModal("resolve-imeis-modal");
     const prevBodyOverflow = document.body.style.overflow;
     const prevHtmlOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = "hidden";
@@ -61,6 +65,7 @@ export function OwnerImeiLedgerClient({ rows, brands }: Props) {
     return () => {
       document.body.style.overflow = prevBodyOverflow;
       document.documentElement.style.overflow = prevHtmlOverflow;
+      closeModal("resolve-imeis-modal");
     };
   }, [resolveOpen]);
 
@@ -103,8 +108,9 @@ export function OwnerImeiLedgerClient({ rows, brands }: Props) {
       IMEI: row.imei,
       Status: row.status,
       Location: row.location,
-      SellPrice: row.sellPrice,
-      CostPrice: row.costPrice,
+      RP: row.rpPrice,
+      DP: row.dpPrice,
+      MRP: row.mrpPrice,
       SalesRep: row.srName ?? "",
       Shop: row.shopName ?? "",
       AddedAt: new Date(row.addedAt).toLocaleString(),
@@ -127,15 +133,16 @@ export function OwnerImeiLedgerClient({ rows, brands }: Props) {
     doc.text("IMEI Ledger", 14, 16);
     autoTable(doc, {
       startY: 22,
-      head: [["Brand", "Model", "IMEI", "Status", "Location", "Sell", "Cost", "Rep", "Shop"]],
+      head: [["Brand", "Model", "IMEI", "Status", "Location", "RP", "DP", "MRP", "Rep", "Shop"]],
       body: filtered.map((row) => [
         row.brand,
         row.model,
         row.imei,
         row.status,
         row.location,
-        row.sellPrice,
-        row.costPrice,
+        row.rpPrice,
+        row.dpPrice,
+        row.mrpPrice,
         row.srName ?? "",
         row.shopName ?? "",
       ]),
@@ -167,11 +174,11 @@ export function OwnerImeiLedgerClient({ rows, brands }: Props) {
       setResolveErr(null);
       setResolveImeiList((prev) => {
         if (prev.includes(imei)) return prev;
-        if (prev.length >= visiblePlaceholders.length) return prev;
+        if (prev.length >= resolvePlaceholderIds.length) return prev;
         return [...prev, imei];
       });
     },
-    [visiblePlaceholders.length],
+    [resolvePlaceholderIds.length],
   );
 
   // Barcode scanner mode: collects typed scan strings (e.g. via hardware keyboard scanner).
@@ -317,17 +324,32 @@ export function OwnerImeiLedgerClient({ rows, brands }: Props) {
   return (
     <div className="space-y-6">
       {resolveOpen ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center pb-[96px] sm:items-center sm:p-4" role="dialog" aria-modal="true">
-          <button type="button" className="absolute inset-0 bg-black/70" aria-label="Close" onClick={() => setResolveOpen(false)} />
+          <div className="fixed inset-0 z-[80] flex items-end justify-center overflow-y-auto p-4 sm:items-center sm:p-4" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/70"
+            aria-label="Close"
+            onClick={() => {
+              setResolveOpen(false);
+              setResolvePlaceholderIds([]);
+            }}
+          />
           <div className="relative flex max-h-[min(92vh,720px)] w-full max-w-lg flex-col rounded-t-2xl border border-zinc-700 bg-zinc-900 shadow-2xl sm:rounded-2xl">
             <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
               <div>
                 <h2 className="text-lg font-semibold text-white">Resolve unspecified IMEIs</h2>
                 <p className="text-xs text-zinc-500">
-                  {visiblePlaceholders.length} placeholder{visiblePlaceholders.length === 1 ? "" : "s"} in the current view.
+                  {resolvePlaceholderIds.length} placeholder{resolvePlaceholderIds.length === 1 ? "" : "s"} in the current view.
                 </p>
               </div>
-              <button type="button" onClick={() => setResolveOpen(false)} className="text-sm text-zinc-400 hover:text-white">
+              <button
+                type="button"
+                onClick={() => {
+                  setResolveOpen(false);
+                  setResolvePlaceholderIds([]);
+                }}
+                className="text-sm text-zinc-400 hover:text-white"
+              >
                 Close
               </button>
             </div>
@@ -441,7 +463,7 @@ export function OwnerImeiLedgerClient({ rows, brands }: Props) {
               )}
 
               <p className="mt-3 text-xs text-zinc-500">
-                Placeholders in this view: {visiblePlaceholders.length}. IMEIs added: {resolveImeiList.length}.
+                Placeholders in this resolve batch: {resolvePlaceholderIds.length}. IMEIs added: {resolveImeiList.length}.
               </p>
 
               <ul className="mt-3 max-h-60 space-y-2 overflow-y-auto">
@@ -474,12 +496,13 @@ export function OwnerImeiLedgerClient({ rows, brands }: Props) {
                   }
                   startResolve(async () => {
                     const fd = new FormData();
-                    fd.set("placeholderIds", JSON.stringify(visiblePlaceholderIds));
+                    fd.set("placeholderIds", JSON.stringify(resolvePlaceholderIds));
                     fd.set("imeis", resolveImeiList.join("\n"));
                     const r = await resolveUnspecifiedImeisAction(fd);
                     if (r && "error" in r && r.error) setResolveErr(r.error);
                     else {
                       setResolveOpen(false);
+                      setResolvePlaceholderIds([]);
                       setResolveInput("");
                       setResolveImeiList([]);
                       setCameraTypedInput("");
@@ -550,6 +573,7 @@ export function OwnerImeiLedgerClient({ rows, brands }: Props) {
             type="button"
             onClick={() => {
               setResolveOpen(true);
+              setResolvePlaceholderIds(visiblePlaceholderIds);
               setResolveInput("");
               setResolveImeiList([]);
               setResolveMode("scanner");
@@ -574,8 +598,9 @@ export function OwnerImeiLedgerClient({ rows, brands }: Props) {
               <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Location</th>
               <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Rep</th>
               <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Shop</th>
-              <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-500">Sell</th>
-              <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-500">Cost</th>
+              <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-500">RP</th>
+              <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-500">DP</th>
+              <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-500">MRP</th>
               <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Added</th>
             </tr>
           </thead>
@@ -592,8 +617,9 @@ export function OwnerImeiLedgerClient({ rows, brands }: Props) {
                 <td className="px-3 py-3 text-zinc-400">{row.location}</td>
                 <td className="px-3 py-3 text-zinc-400">{row.srName ?? "—"}</td>
                 <td className="px-3 py-3 text-zinc-400">{row.shopName ?? "—"}</td>
-                <td className="px-3 py-3 text-right text-teal-300">{formatMoney(row.sellPrice)}</td>
-                <td className="px-3 py-3 text-right text-zinc-300">{formatMoney(row.costPrice)}</td>
+                <td className="px-3 py-3 text-right text-teal-300">{formatMoney(row.rpPrice)}</td>
+                <td className="px-3 py-3 text-right text-zinc-300">{formatMoney(row.dpPrice)}</td>
+                <td className="px-3 py-3 text-right text-amber-200">{formatMoney(row.mrpPrice)}</td>
                 <td className="px-3 py-3 text-zinc-500">{new Date(row.addedAt).toLocaleDateString()}</td>
               </tr>
             ))}

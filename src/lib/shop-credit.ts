@@ -13,7 +13,7 @@ export async function getUndeliveredOrderExposureTx(
   const orders = await tx.shopOrder.findMany({
     where: {
       shopId,
-      status: { in: ["OPEN", "ASSIGNED"] },
+      status: { in: ["OPEN", "OWNER_ACCEPTED", "ASSIGNED"] },
       ...(excludeOrderId ? { id: { not: excludeOrderId } } : {}),
     },
     include: { lines: true },
@@ -66,12 +66,13 @@ export async function assertWithinCreditLimitTx(
 export async function assertCreditAfterConfirmingDeliveryTx(
   tx: Tx,
   shopId: string,
-  deliveryAdd: Prisma.Decimal
+  deliveryAdd: Prisma.Decimal,
+  excludeOrderId?: string
 ): Promise<void> {
   const shop = await tx.shop.findUnique({ where: { id: shopId } });
   if (!shop) throw new Error("Store not found.");
   const dueNow = await getShopDueTx(tx, shopId);
-  const exposure = await getUndeliveredOrderExposureTx(tx, shopId);
+  const exposure = await getUndeliveredOrderExposureTx(tx, shopId, excludeOrderId);
   const projected = dueNow.add(deliveryAdd).add(exposure);
   if (projected.gt(shop.creditLimit)) {
     throw new Error("This receipt would push the store over its credit limit. Owner must raise the limit first.");

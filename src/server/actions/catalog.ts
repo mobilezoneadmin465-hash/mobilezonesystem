@@ -36,8 +36,9 @@ export async function createProductAction(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim() || null;
   const unitPriceRaw = String(formData.get("unitPrice") ?? "");
   const unitCostRaw = String(formData.get("unitCost") ?? "").trim();
+  const unitMrpRaw = String(formData.get("unitMrp") ?? "").trim();
 
-  if (!brandId || !name || !unitPriceRaw) return { error: "Choose a brand, model name, and price." };
+  if (!brandId || !name || !unitPriceRaw) return { error: "Choose a brand, model name, and RP/DP/MRP." };
 
   const br = await prisma.brand.findUnique({ where: { id: brandId } });
   if (!br) return { error: "Invalid brand." };
@@ -55,9 +56,19 @@ export async function createProductAction(formData: FormData) {
     try {
       unitCost = new Prisma.Decimal(unitCostRaw);
     } catch {
-      return { error: "Invalid cost price." };
+      return { error: "Invalid DP." };
     }
-    if (unitCost.lt(0)) return { error: "Cost cannot be negative." };
+    if (unitCost.lt(0)) return { error: "DP cannot be negative." };
+  }
+
+  let unitMrp = new Prisma.Decimal(0);
+  if (unitMrpRaw) {
+    try {
+      unitMrp = new Prisma.Decimal(unitMrpRaw);
+    } catch {
+      return { error: "Invalid MRP." };
+    }
+    if (unitMrp.lt(0)) return { error: "MRP cannot be negative." };
   }
 
   const p = await prisma.catalogProduct.create({
@@ -69,8 +80,15 @@ export async function createProductAction(formData: FormData) {
       warehouseQty: 0,
       unitPrice,
       unitCost,
-    },
+    } as unknown as Prisma.CatalogProductUncheckedCreateInput,
   });
+
+  // Prisma client generation can lag behind schema; set unitMrp via raw SQL.
+  await prisma.$executeRaw`
+    UPDATE "CatalogProduct"
+    SET "unitMrp" = ${unitMrp}
+    WHERE "id" = ${p.id}
+  `;
 
   await logActivity({
     type: "CATALOG_CREATE",
@@ -94,6 +112,7 @@ export async function updateProductAction(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim() || null;
   const unitPriceRaw = String(formData.get("unitPrice") ?? "");
   const unitCostRaw = String(formData.get("unitCost") ?? "").trim();
+  const unitMrpRaw = String(formData.get("unitMrp") ?? "").trim();
 
   if (!id || !name || !unitPriceRaw) return { error: "Missing fields." };
 
@@ -122,9 +141,19 @@ export async function updateProductAction(formData: FormData) {
     try {
       unitCost = new Prisma.Decimal(unitCostRaw);
     } catch {
-      return { error: "Invalid cost price." };
+      return { error: "Invalid DP." };
     }
-    if (unitCost.lt(0)) return { error: "Cost cannot be negative." };
+    if (unitCost.lt(0)) return { error: "DP cannot be negative." };
+  }
+
+  let unitMrp = new Prisma.Decimal(0);
+  if (unitMrpRaw) {
+    try {
+      unitMrp = new Prisma.Decimal(unitMrpRaw);
+    } catch {
+      return { error: "Invalid MRP." };
+    }
+    if (unitMrp.lt(0)) return { error: "MRP cannot be negative." };
   }
 
   await prisma.catalogProduct.update({
@@ -136,8 +165,15 @@ export async function updateProductAction(formData: FormData) {
       description,
       unitPrice,
       unitCost,
-    },
+    } as unknown as Prisma.CatalogProductUncheckedUpdateInput,
   });
+
+  // Prisma client generation can lag behind schema; set unitMrp via raw SQL.
+  await prisma.$executeRaw`
+    UPDATE "CatalogProduct"
+    SET "unitMrp" = ${unitMrp}
+    WHERE "id" = ${id}
+  `;
 
   await logActivity({
     type: "CATALOG_UPDATE",
@@ -174,30 +210,29 @@ export async function addProductStockAction(formData: FormData) {
 
   if (imeis.length > quantity) return { error: "IMEI count cannot exceed quantity." };
   const placeholdersCount = quantity - imeis.length;
+  const now = Date.now();
+
+  const placeholderImeis =
+    placeholdersCount > 0
+      ? Array.from({ length: placeholdersCount }).map((_, i) => {
+          return `${UNSPECIFIED_IMEI_PREFIX}${productId}_${now}_${i}_${randomUUID()}`;
+        })
+      : [];
 
   const product = await prisma.catalogProduct.findUnique({ where: { id: productId } });
   if (!product) return { error: "Product not found." };
 
   try {
     await prisma.$transaction(async (tx) => {
-      for (const imei of imeis) {
-        await tx.productImei.create({
-          data: {
-            productId,
-            imei,
-            location: "WAREHOUSE",
-          },
+      if (imeis.length) {
+        await tx.productImei.createMany({
+          data: imeis.map((imei) => ({ productId, imei, location: "WAREHOUSE" })),
         });
       }
-      for (let i = 0; i < placeholdersCount; i++) {
-        await tx.productImei.create({
-          data: {
-            productId,
-            // Stored as UNIQUE placeholder string in DB (since `imei` column is unique),
-            // but displayed as "unspecified imei" in the ledger.
-            imei: `${UNSPECIFIED_IMEI_PREFIX}${productId}_${Date.now()}_${i}_${randomUUID()}`,
-            location: "WAREHOUSE",
-          },
+
+      if (placeholdersCount > 0) {
+        await tx.productImei.createMany({
+          data: placeholderImeis.map((imei) => ({ productId, imei, location: "WAREHOUSE" })),
         });
       }
       await syncProductWarehouseQty(tx, productId);

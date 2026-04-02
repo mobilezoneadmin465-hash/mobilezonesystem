@@ -86,8 +86,10 @@ model CatalogProduct {
   description  String?
   warehouseQty Int      @default(0)
   unitPrice    Decimal
-  /// Your cost per unit (COGS); used for profit analytics.
+  /// DP: dealer price (used for profit analytics currently).
   unitCost     Decimal  @default(0)
+  /// MRP: customer price.
+  unitMrp      Decimal  @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

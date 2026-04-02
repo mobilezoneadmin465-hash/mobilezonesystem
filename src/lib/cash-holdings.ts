@@ -75,7 +75,7 @@ export async function getDefaultCashRecipientForShop(shopId: string): Promise<st
   if (assignedOrder?.assignedSrId) return assignedOrder.assignedSrId;
 
   const delivery = await prisma.shopDelivery.findFirst({
-    where: { shopId, status: "CONFIRMED" },
+    where: { shopId, status: { in: ["CONFIRMED", "CONFIRMED_WITH_IMEIS"] } },
     orderBy: { confirmedAt: "desc" },
     select: { srId: true },
   });

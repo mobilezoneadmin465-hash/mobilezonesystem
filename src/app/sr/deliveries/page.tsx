@@ -15,7 +15,7 @@ export default async function SrDeliveriesPage() {
   });
 
   const waiting = deliveries.filter((d) => d.status === "PENDING_RETAIL");
-  const done = deliveries.filter((d) => d.status === "CONFIRMED");
+  const done = deliveries.filter((d) => d.status === "CONFIRMED" || d.status === "CONFIRMED_WITH_IMEIS");
 
   return (
     <div className="space-y-8">

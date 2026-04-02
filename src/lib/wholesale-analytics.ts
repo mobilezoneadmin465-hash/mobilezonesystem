@@ -80,7 +80,7 @@ export async function computeWholesaleAnalytics(
       include: completedOrderInclude,
     }),
     prisma.shopOrder.findMany({
-      where: { status: { in: ["OPEN", "ASSIGNED"] } },
+      where: { status: { in: ["OPEN", "OWNER_ACCEPTED", "OWNER_PREPARED", "ASSIGNED"] } },
       include: completedOrderInclude,
     }),
     prisma.payment.findMany({

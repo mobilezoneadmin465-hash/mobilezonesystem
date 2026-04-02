@@ -7,6 +7,8 @@
 export const commonEn: Record<string, any> = {
   orderStatus: {
     OPEN: "Open",
+    OWNER_ACCEPTED: "Owner accepted",
+    OWNER_PREPARED: "Delivery prepared",
     ASSIGNED: "Assigned",
     COMPLETED: "Done",
     CANCELLED: "Cancelled",
@@ -16,6 +18,8 @@ export const commonEn: Record<string, any> = {
 export const commonBn: Record<string, any> = {
   orderStatus: {
     OPEN: "খোলা",
+    OWNER_ACCEPTED: "মালিক গ্রহণ করেছেন",
+    OWNER_PREPARED: "ডেলিভারি প্রস্তুত",
     ASSIGNED: "নিযুক্ত",
     COMPLETED: "সম্পন্ন",
     CANCELLED: "বাতিল",
@@ -270,6 +274,11 @@ export const ownerEn: Record<string, any> = {
     assignLabel: "Assign / change rep",
     assign: "Assign",
     unassign: "Unassign",
+    acceptOrder: "Accept order",
+    rejectOrder: "Reject order",
+    prepareDelivery: "Prepare delivery",
+    waitingFinish: "Waiting for field team to finish",
+    finishDelivery: "Finish delivery",
     markComplete: "Mark complete",
     cancelVoid: "Cancel / void",
     cancelConfirm: "Cancel order? Stock and due will be adjusted.",
@@ -375,6 +384,11 @@ export const ownerBn: Record<string, any> = {
     assignLabel: "প্রতিনিধি নিয়োগ / বদল",
     assign: "নিয়োগ",
     unassign: "নিয়োগ খুলুন",
+    acceptOrder: "অর্ডার গ্রহণ করুন",
+    rejectOrder: "অর্ডার প্রত্যাখ্যান করুন",
+    prepareDelivery: "ডেলিভারি প্রস্তুত করুন",
+    waitingFinish: "ফিল্ড টিম সম্পন্ন করার অপেক্ষায়",
+    finishDelivery: "ডেলিভারি সম্পন্ন করুন",
     markComplete: "সম্পন্ন চিহ্নিত করুন",
     cancelVoid: "বাতিল করুন",
     cancelConfirm: "অর্ডার বাতিল? বাকি ও স্টক ঠিক হবে।",

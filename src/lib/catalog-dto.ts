@@ -8,7 +8,10 @@ export type CatalogProductDTO = {
   name: string;
   description: string | null;
   warehouseQty: number;
+  /// RP: retailer price
   unitPrice: string;
+  /// MRP: customer price (not used yet in order flows)
+  unitMrp: string;
 };
 
 /** Owner warehouse screen only — includes cost (not exposed to retail/SR clients). */
@@ -34,6 +37,7 @@ export function toCatalogProductDTO(p: ProductForDto): CatalogProductDTO {
     description: p.description,
     warehouseQty: p.warehouseQty,
     unitPrice: p.unitPrice.toString(),
+    unitMrp: ((p as unknown as { unitMrp?: { toString: () => string } | null }).unitMrp?.toString() ?? "0"),
   };
 }
 

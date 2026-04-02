@@ -56,7 +56,7 @@ export default async function OwnerDashboardPage() {
       include: { shop: true, sr: true, lines: { include: { product: true } } },
     }),
     prisma.shopOrder.findMany({
-      where: { status: { in: ["OPEN", "ASSIGNED"] } },
+      where: { status: { in: ["OPEN", "OWNER_ACCEPTED", "OWNER_PREPARED", "ASSIGNED"] } },
       orderBy: { createdAt: "desc" },
       include: { shop: true, assignedSr: true, lines: { include: { product: true } } },
     }),

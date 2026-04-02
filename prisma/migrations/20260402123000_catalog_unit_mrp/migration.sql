@@ -1,0 +1,3 @@
+ALTER TABLE "CatalogProduct"
+ADD COLUMN "unitMrp" DECIMAL(65,30) NOT NULL DEFAULT 0;
+

@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatMoney } from "@/lib/finance";
 import { authOptions } from "@/lib/auth";
@@ -18,7 +19,7 @@ export default async function RetailDeliveriesPage() {
   });
 
   const pending = deliveries.filter((d) => d.status === "PENDING_RETAIL");
-  const done = deliveries.filter((d) => d.status === "CONFIRMED");
+  const done = deliveries.filter((d) => d.status === "CONFIRMED" || d.status === "CONFIRMED_WITH_IMEIS");
 
   return (
     <div className="space-y-10">
@@ -56,7 +57,14 @@ export default async function RetailDeliveriesPage() {
         <ul className="space-y-2">
           {done.map((d) => (
             <li key={d.id} className="app-card text-sm text-zinc-400">
-              <span className="text-white">{d.sr.name}</span> · {d.confirmedAt?.toLocaleString()}
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <span className="text-white">{d.sr.name}</span> · {d.confirmedAt?.toLocaleString()}
+                </div>
+                <Link href={`/retail/deliveries/${d.id}/receipt`} className="app-btn-secondary py-1.5 text-xs">
+                  View receipt
+                </Link>
+              </div>
               <ul className="mt-2 space-y-0.5 text-xs">
                 {d.lines.map((l) => (
                   <li key={l.id}>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { ShopOrderListDTO } from "@/lib/order-dto";
@@ -10,8 +11,11 @@ import {
   cancelOrderAction,
   completeOrderAction,
   unassignOrderAction,
+  ownerAcceptOrderAction,
+  ownerRejectOrderAction,
 } from "@/server/actions/orders";
 import { useLanguage } from "@/components/LanguageContext";
+import { FinishPreparedDeliveryButton } from "@/components/sr/FinishPreparedDeliveryButton";
 
 function lineTotal(lines: ShopOrderListDTO["lines"]) {
   return lines.reduce((s, l) => s + Number(l.unitPrice) * l.quantity, 0);
@@ -21,10 +25,12 @@ export function OwnerOrderCard({
   order,
   salesReps,
   mode,
+  viewerId,
 }: {
   order: ShopOrderListDTO;
   salesReps: { id: string; name: string }[];
   mode: "active" | "archive";
+  viewerId?: string;
 }) {
   const { t } = useLanguage();
   const router = useRouter();
@@ -67,7 +73,7 @@ export function OwnerOrderCard({
         <p className="text-right text-teal-300">{formatMoney(lineTotal(order.lines))}</p>
       </div>
 
-      {order.status === "ASSIGNED" && mode === "active" ? (
+      {order.status === "ASSIGNED" || order.status === "OWNER_PREPARED" ? (
         <div className="space-y-1">
           <div className="h-1.5 overflow-hidden rounded-full bg-zinc-800">
             <div className="h-full bg-sky-500/90 transition-all" style={{ width: `${prog.pct}%` }} />
@@ -100,7 +106,7 @@ export function OwnerOrderCard({
           {t("owner.orderCard.confirmedOn")} {new Date(order.retailConfirmedAt).toLocaleString()}
         </p>
       ) : null}
-      {order.assignedSrName && mode === "active" && order.status === "ASSIGNED" ? (
+      {order.assignedSrName && mode === "active" && (order.status === "ASSIGNED" || order.status === "OWNER_PREPARED") ? (
         <p className="text-xs text-sky-300">
           {t("owner.orderCard.assigned")} {order.assignedSrName}
         </p>
@@ -110,77 +116,138 @@ export function OwnerOrderCard({
 
       {mode === "active" && !isDone ? (
         <div className="flex flex-col gap-3 border-t border-zinc-800 pt-3">
-          <div className="flex flex-wrap items-end gap-2">
-            <label className="text-xs text-zinc-500">
-              {t("owner.orderCard.assignLabel")}
-              <select
-                value={srId}
-                onChange={(e) => setSrId(e.target.value)}
-                className="app-input mt-1 min-w-[10rem]"
+          {order.status === "OPEN" ? (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={pending}
+                className="app-btn py-2 text-xs disabled:opacity-50"
+                onClick={() => {
+                  const fd = new FormData();
+                  fd.set("orderId", order.id);
+                  run(fd, ownerAcceptOrderAction);
+                }}
               >
-                <option value="">—</option>
-                {salesReps.map((sr) => (
-                  <option key={sr.id} value={sr.id}>
-                    {sr.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              disabled={pending || !srId}
-              className="app-btn py-2 text-xs disabled:opacity-50"
-              onClick={() => {
-                const fd = new FormData();
-                fd.set("orderId", order.id);
-                fd.set("srId", srId);
-                run(fd, assignOrderToSrAction);
-              }}
-            >
-              {t("owner.orderCard.assign")}
-            </button>
-          </div>
-          {order.status === "ASSIGNED" ? (
-            <button
-              type="button"
-              disabled={pending}
-              className="app-btn-secondary py-1.5 text-xs"
-              onClick={() => {
-                const fd = new FormData();
-                fd.set("orderId", order.id);
-                run(fd, unassignOrderAction);
-              }}
-            >
-              {t("owner.orderCard.unassign")}
-            </button>
+                {t("owner.orderCard.acceptOrder")}
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                className="rounded-xl border border-red-900/50 px-3 py-2 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
+                onClick={() => {
+                  if (!confirm(t("owner.orderCard.rejectOrder"))) return;
+                  const fd = new FormData();
+                  fd.set("orderId", order.id);
+                  run(fd, ownerRejectOrderAction);
+                }}
+              >
+                {t("owner.orderCard.rejectOrder")}
+              </button>
+            </div>
           ) : null}
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              disabled={pending}
-              className="app-btn py-1.5 text-xs"
-              onClick={() => {
-                const fd = new FormData();
-                fd.set("orderId", order.id);
-                run(fd, completeOrderAction);
-              }}
-            >
-              {t("owner.orderCard.markComplete")}
-            </button>
-            <button
-              type="button"
-              disabled={pending}
-              className="rounded-xl border border-red-900/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40"
-              onClick={() => {
-                if (!confirm(t("owner.orderCard.cancelConfirm"))) return;
-                const fd = new FormData();
-                fd.set("orderId", order.id);
-                run(fd, cancelOrderAction);
-              }}
-            >
-              {t("owner.orderCard.cancelVoid")}
-            </button>
-          </div>
+
+          {order.status === "OWNER_ACCEPTED" ? (
+            <div className="flex flex-wrap gap-2 items-center">
+              <Link href={`/owner/orders/${order.id}/prepare-delivery`} className="app-btn py-2 text-xs">
+                {t("owner.orderCard.prepareDelivery")}
+              </Link>
+              <button
+                type="button"
+                disabled={pending}
+                className="rounded-xl border border-red-900/50 px-3 py-2 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
+                onClick={() => {
+                  if (!confirm(t("owner.orderCard.rejectOrder"))) return;
+                  const fd = new FormData();
+                  fd.set("orderId", order.id);
+                  run(fd, ownerRejectOrderAction);
+                }}
+              >
+                {t("owner.orderCard.rejectOrder")}
+              </button>
+            </div>
+          ) : null}
+
+          {order.status === "OWNER_PREPARED" ? (
+            viewerId && order.assignedSrId === viewerId ? (
+              <FinishPreparedDeliveryButton orderId={order.id} />
+            ) : (
+              <p className="text-xs text-amber-200/80">{t("owner.orderCard.waitingFinish")}</p>
+            )
+          ) : null}
+
+          {order.status === "ASSIGNED" ? (
+            <>
+              <div className="flex flex-wrap items-end gap-2">
+                <label className="text-xs text-zinc-500">
+                  {t("owner.orderCard.assignLabel")}
+                  <select
+                    value={srId}
+                    onChange={(e) => setSrId(e.target.value)}
+                    className="app-input mt-1 min-w-[10rem]"
+                  >
+                    <option value="">—</option>
+                    {salesReps.map((sr) => (
+                      <option key={sr.id} value={sr.id}>
+                        {sr.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  disabled={pending || !srId}
+                  className="app-btn py-2 text-xs disabled:opacity-50"
+                  onClick={() => {
+                    const fd = new FormData();
+                    fd.set("orderId", order.id);
+                    fd.set("srId", srId);
+                    run(fd, assignOrderToSrAction);
+                  }}
+                >
+                  {t("owner.orderCard.assign")}
+                </button>
+              </div>
+              <button
+                type="button"
+                disabled={pending}
+                className="app-btn-secondary py-1.5 text-xs"
+                onClick={() => {
+                  const fd = new FormData();
+                  fd.set("orderId", order.id);
+                  run(fd, unassignOrderAction);
+                }}
+              >
+                {t("owner.orderCard.unassign")}
+              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={pending}
+                  className="app-btn py-1.5 text-xs"
+                  onClick={() => {
+                    const fd = new FormData();
+                    fd.set("orderId", order.id);
+                    run(fd, completeOrderAction);
+                  }}
+                >
+                  {t("owner.orderCard.markComplete")}
+                </button>
+                <button
+                  type="button"
+                  disabled={pending}
+                  className="rounded-xl border border-red-900/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40"
+                  onClick={() => {
+                    if (!confirm(t("owner.orderCard.cancelConfirm"))) return;
+                    const fd = new FormData();
+                    fd.set("orderId", order.id);
+                    run(fd, cancelOrderAction);
+                  }}
+                >
+                  {t("owner.orderCard.cancelVoid")}
+                </button>
+              </div>
+            </>
+          ) : null}
         </div>
       ) : null}
 

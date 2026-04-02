@@ -31,7 +31,9 @@ export default async function RetailOrdersPage() {
   const productsDto = products.map(toCatalogProductDTO);
   const orders = ordersRaw.map(toShopOrderListDTO);
 
-  const active = orders.filter((o) => o.status === "OPEN" || o.status === "ASSIGNED");
+  const active = orders.filter(
+    (o) => o.status === "OPEN" || o.status === "OWNER_ACCEPTED" || o.status === "OWNER_PREPARED" || o.status === "ASSIGNED"
+  );
   const history = orders.filter((o) => o.status === "COMPLETED" || o.status === "CANCELLED");
 
   return (

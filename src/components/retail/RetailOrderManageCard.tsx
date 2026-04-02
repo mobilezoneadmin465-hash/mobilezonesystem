@@ -67,7 +67,7 @@ export function RetailOrderManageCard({
   }, [products, qtyByProduct]);
 
   const assignedProg = useMemo(
-    () => (order.status === "ASSIGNED" ? orderDeliveryProgress(order.lines) : null),
+    () => (order.status === "ASSIGNED" || order.status === "OWNER_PREPARED" ? orderDeliveryProgress(order.lines) : null),
     [order.status, order.lines]
   );
 
@@ -240,7 +240,7 @@ export function RetailOrderManageCard({
               {order.lines.map((l) => (
                 <li key={l.id}>
                   {l.brand} {l.name} × {l.quantity} @ {formatMoney(l.unitPrice)}
-                  {order.status === "ASSIGNED" ? (
+                  {order.status === "ASSIGNED" || order.status === "OWNER_PREPARED" ? (
                     <span className="text-emerald-400/90">
                       {" "}
                       ({t("retail.orderCard.deliveredShort")} {l.deliveredQty})

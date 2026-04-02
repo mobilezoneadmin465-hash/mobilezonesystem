@@ -7,6 +7,7 @@ import type { BrandDTO, OwnerCatalogProductDTO } from "@/lib/catalog-dto";
 import { createBrandAction, deleteBrandAction } from "@/server/actions/brand";
 import { addProductStockAction, createProductAction, updateProductAction } from "@/server/actions/catalog";
 import { formatMoney } from "@/lib/finance";
+import { closeModal, openModal } from "@/lib/modal-manager";
 
 type Props = {
   initial: OwnerCatalogProductDTO[];
@@ -61,11 +62,11 @@ export function OwnerCatalogClient({ initial, brands }: Props) {
           <p className="mt-2 text-2xl font-semibold text-white">{totalUnits}</p>
         </div>
         <div className="app-card">
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Current stock at sell price</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Current stock at RP</p>
           <p className="mt-2 text-2xl font-semibold text-teal-300">{formatMoney(stockAtSell)}</p>
         </div>
         <div className="app-card">
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Current stock at cost</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Current stock at DP</p>
           <p className="mt-2 text-2xl font-semibold text-white">{formatMoney(stockAtCost)}</p>
         </div>
       </section>
@@ -148,6 +149,11 @@ function BrandsModal({
   const [err, setErr] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
+  useEffect(() => {
+    openModal("brands-modal");
+    return () => closeModal("brands-modal");
+  }, []);
+
   function run(fd: FormData, action: (fd: FormData) => Promise<{ error?: string }>) {
     setErr(null);
     start(async () => {
@@ -158,7 +164,7 @@ function BrandsModal({
   }
 
   return (
-      <div className="fixed inset-0 z-50 flex items-end justify-center pb-[96px] sm:items-center sm:p-4" role="dialog" aria-modal="true">
+      <div className="fixed inset-0 z-[80] flex items-end justify-center overflow-y-auto p-4 sm:items-center sm:p-4" role="dialog" aria-modal="true">
       <button type="button" className="absolute inset-0 bg-black/70" aria-label="Close" onClick={onClose} />
       <div className="relative flex max-h-[min(88vh,640px)] w-full max-w-md flex-col rounded-t-2xl border border-zinc-700 bg-zinc-900 shadow-2xl sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
@@ -244,8 +250,13 @@ function AddProductModal({
   const [err, setErr] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
+  useEffect(() => {
+    openModal("add-product-modal");
+    return () => closeModal("add-product-modal");
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center pb-[96px] sm:items-center sm:p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[80] flex items-end justify-center overflow-y-auto p-4 sm:items-center sm:p-4" role="dialog" aria-modal="true">
       <button type="button" className="absolute inset-0 bg-black/70" aria-label="Close" onClick={onClose} />
       <div className="relative flex max-h-[min(92vh,720px)] w-full max-w-md flex-col rounded-t-2xl border border-zinc-700 bg-zinc-900 shadow-2xl sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
@@ -295,14 +306,18 @@ function AddProductModal({
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="text-xs text-zinc-500">
-                Sell price now (BDT)
+                RP now (BDT)
                 <input name="unitPrice" type="text" required className="app-input mt-1" placeholder="35000" />
               </label>
               <label className="text-xs text-zinc-500">
-                Cost price now (BDT, optional)
+                DP now (BDT, optional)
                 <input name="unitCost" type="text" className="app-input mt-1" placeholder="31000" />
               </label>
             </div>
+            <label className="block text-xs text-zinc-500">
+              MRP (BDT)
+              <input name="unitMrp" type="text" required className="app-input mt-1" placeholder="42000" />
+            </label>
           </div>
           <button type="submit" disabled={pending} className="app-btn mt-6 w-full disabled:opacity-50">
             {pending ? "Saving…" : "Create product"}
@@ -355,8 +370,8 @@ function CatalogRow({
           </p>
           <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-500">
             <span>{p.warehouseQty} in stock</span>
-            <span>Sell {formatMoney(p.unitPrice)}</span>
-            {Number(p.unitCost) > 0 ? <span>Cost {formatMoney(p.unitCost)}</span> : null}
+            <span>RP {formatMoney(p.unitPrice)}</span>
+            {Number(p.unitCost) > 0 ? <span>DP {formatMoney(p.unitCost)}</span> : null}
           </div>
           {p.description ? <p className="mt-2 text-sm text-zinc-400">{p.description}</p> : null}
         </div>
@@ -388,6 +403,11 @@ function EditProductModal({
   const [pending, start] = useTransition();
   const [useLegacyBrand, setUseLegacyBrand] = useState(!p.brandId);
 
+  useEffect(() => {
+    openModal("edit-product-modal");
+    return () => closeModal("edit-product-modal");
+  }, []);
+
   function save(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
@@ -401,7 +421,7 @@ function EditProductModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center pb-[96px] sm:items-center sm:p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[80] flex items-end justify-center overflow-y-auto p-4 sm:items-center sm:p-4" role="dialog" aria-modal="true">
       <button type="button" className="absolute inset-0 bg-black/70" aria-label="Close" onClick={onClose} />
       <div className="relative flex max-h-[min(92vh,720px)] w-full max-w-md flex-col rounded-t-2xl border border-zinc-700 bg-zinc-900 shadow-2xl sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
@@ -442,14 +462,18 @@ function EditProductModal({
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="text-xs text-zinc-500">
-                New sell price (BDT)
+                New RP (BDT)
                 <input name="unitPrice" defaultValue={p.unitPrice} required className="app-input mt-1" />
               </label>
               <label className="text-xs text-zinc-500">
-                New cost price (BDT)
+                New DP (BDT)
                 <input name="unitCost" defaultValue={p.unitCost} className="app-input mt-1" placeholder="0" />
               </label>
             </div>
+            <label className="text-xs text-zinc-500">
+              New MRP (BDT)
+              <input name="unitMrp" defaultValue={p.unitMrp} required className="app-input mt-1" placeholder="0" />
+            </label>
             <label className="text-xs text-zinc-500">
               Note
               <input name="description" defaultValue={p.description ?? ""} className="app-input mt-1" />
@@ -482,8 +506,14 @@ function AddStockModal({
   const [cameraStatus, setCameraStatus] = useState<string>("Ready");
   const [pending, start] = useTransition();
 
+  // Clear transient errors as the user edits inputs/mode.
+  useEffect(() => {
+    setErr(null);
+  }, [mode, quantity, input]);
+
   // Lock background scroll while this bottom-sheet modal is open.
   useEffect(() => {
+    openModal("add-stock-modal");
     const prevBodyOverflow = document.body.style.overflow;
     const prevHtmlOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = "hidden";
@@ -491,6 +521,7 @@ function AddStockModal({
     return () => {
       document.body.style.overflow = prevBodyOverflow;
       document.documentElement.style.overflow = prevHtmlOverflow;
+      closeModal("add-stock-modal");
     };
   }, []);
 
@@ -632,6 +663,15 @@ function AddStockModal({
     }
 
     function onKeyDown(e: KeyboardEvent) {
+      // In scanner mode we intentionally listen for “keyboard wedge” IMEI scans.
+      // But we must NOT treat manual typing inside inputs (like the quantity box)
+      // as a barcode scan.
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName?.toLowerCase();
+      const isTypingInControl =
+        tag === "input" || tag === "textarea" || tag === "select" || Boolean(target?.isContentEditable);
+      if (isTypingInControl) return;
+
       if (e.key === "Enter") {
         e.preventDefault();
         flushScannerBuffer();
@@ -700,7 +740,7 @@ function AddStockModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center pb-[96px] sm:items-center sm:p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[80] flex items-end justify-center overflow-y-auto p-4 sm:items-center sm:p-4" role="dialog" aria-modal="true">
       <button type="button" className="absolute inset-0 bg-black/70" aria-label="Close" onClick={onClose} />
       <div className="relative flex max-h-[min(92vh,720px)] w-full max-w-lg flex-col rounded-t-2xl border border-zinc-700 bg-zinc-900 shadow-2xl sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">

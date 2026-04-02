@@ -6,7 +6,7 @@ type DueDb = Pick<PrismaClient, "shopDelivery" | "payment">;
 
 /** Confirmed deliveries (stock at shop) minus confirmed payments */
 export async function getShopDueTx(db: DueDb, shopId: string): Promise<Prisma.Decimal> {  const deliveries = await db.shopDelivery.findMany({
-    where: { shopId, status: "CONFIRMED" },
+    where: { shopId, status: { in: ["CONFIRMED", "CONFIRMED_WITH_IMEIS"] } },
     include: { lines: true },
   });
 

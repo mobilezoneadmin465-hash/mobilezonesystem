@@ -160,6 +160,98 @@ export async function createOwnerOrderForShopAction(formData: FormData) {
   return { success: true };
 }
 
+export async function ownerAcceptOrderAction(formData: FormData) {
+  const owner = await requireOwner();
+  if (!owner) return { error: "Unauthorized." };
+
+  const orderId = String(formData.get("orderId") ?? "");
+  if (!orderId) return { error: "Missing order." };
+
+  const order = await prisma.shopOrder.findUnique({ where: { id: orderId } });
+  if (!order) return { error: "Order not found." };
+  if (order.status !== "OPEN") return { error: "This order cannot be accepted." };
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await assertOrderHasNoShippedProgressTx(tx, orderId);
+      await tx.shopOrder.update({
+        where: { id: orderId },
+        data: {
+          status: "OWNER_ACCEPTED",
+          assignedSrId: null,
+          assignedAt: null,
+        },
+      });
+    });
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not accept order." };
+  }
+
+  await logActivity({
+    type: "ORDER_OWNER_ACCEPT",
+    title: "Owner accepted order",
+    actorUserId: owner.id,
+    shopId: order.shopId,
+  });
+
+  revalidatePath("/owner/orders");
+  revalidatePath("/owner/shops/" + order.shopId);
+  revalidatePath("/owner/dashboard");
+  revalidatePath("/retail/orders");
+  revalidatePath("/sr/to-deliver");
+  revalidatePath("/owner/orders/history");
+
+  return { success: true };
+}
+
+export async function ownerRejectOrderAction(formData: FormData) {
+  const owner = await requireOwner();
+  if (!owner) return { error: "Unauthorized." };
+
+  const orderId = String(formData.get("orderId") ?? "");
+  if (!orderId) return { error: "Missing order." };
+
+  const order = await prisma.shopOrder.findUnique({ where: { id: orderId } });
+  if (!order) return { error: "Order not found." };
+  if (order.status !== "OPEN" && order.status !== "OWNER_ACCEPTED") return { error: "This order cannot be rejected." };
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await reverseOrderDeliveriesInTx(tx, orderId);
+      await tx.shopOrder.update({
+        where: { id: orderId },
+        data: {
+          status: "CANCELLED",
+          assignedSrId: null,
+          assignedAt: null,
+          retailConfirmedAt: null,
+          fulfilledBySrId: null,
+          completedAt: null,
+          cancelledAt: new Date(),
+        },
+      });
+    });
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not reject order." };
+  }
+
+  await logActivity({
+    type: "ORDER_OWNER_REJECT",
+    title: "Owner rejected order",
+    actorUserId: owner.id,
+    shopId: order.shopId,
+  });
+
+  revalidatePath("/owner/orders");
+  revalidatePath("/owner/shops/" + order.shopId);
+  revalidatePath("/owner/dashboard");
+  revalidatePath("/retail/orders");
+  revalidatePath("/sr/to-deliver");
+  revalidatePath("/owner/orders/history");
+
+  return { success: true };
+}
+
 export async function assignOrderToSrAction(formData: FormData) {
   const owner = await requireOwner();
   if (!owner) return { error: "Unauthorized." };

@@ -10,6 +10,7 @@ import {
 } from "@/lib/order-dto";
 import { prisma } from "@/lib/prisma";
 import { SrToDeliverOrderForm } from "@/components/sr/SrToDeliverOrderForm";
+import { FinishPreparedDeliveryButton } from "@/components/sr/FinishPreparedDeliveryButton";
 
 type Props = { params: Promise<{ orderId: string }> };
 
@@ -39,7 +40,8 @@ export default async function SrToDeliverOrderPage({ params }: Props) {
   });
 
   const allLinesDone = order.lines.every((l) => l.deliveredQty >= l.quantity);
-  const showForm = order.status === "ASSIGNED" && !allLinesDone;
+  const showSrForm = order.status === "ASSIGNED" && !allLinesDone;
+  const showFinishForm = order.status === "OWNER_PREPARED" && !allLinesDone;
 
   return (
     <div className="space-y-6">
@@ -62,8 +64,10 @@ export default async function SrToDeliverOrderPage({ params }: Props) {
 
       {order.status === "COMPLETED" || allLinesDone ? (
         <p className="app-card text-sm text-emerald-400/90">All lines delivered. Order is complete.</p>
-      ) : showForm ? (
+      ) : showSrForm ? (
         <SrToDeliverOrderForm order={order} inventory={inventory} />
+      ) : showFinishForm ? (
+        <FinishPreparedDeliveryButton orderId={order.id} />
       ) : (
         <p className="app-card text-sm text-zinc-500">
           This order isn&apos;t assigned for delivery right now (unassigned, cancelled, or on hold).
