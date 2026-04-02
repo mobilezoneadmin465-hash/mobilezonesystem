@@ -32,13 +32,20 @@ export const authOptions: NextAuthOptions = {
           const ok = await compare(secret, user.passwordHash);
           if (!ok) return null;
         } else {
-          if (user.pinHash) {
-            if (!isPinFormat(secret)) return null;
-            const ok = await compare(secret, user.pinHash);
-            if (!ok) return null;
-          } else if (user.passwordHash) {
-            const ok = await compare(secret, user.passwordHash);
-            if (!ok) return null;
+          // Non-owner users can authenticate via PIN (primary) or password (secondary).
+          const hasPin = Boolean(user.pinHash);
+          const hasPassword = Boolean(user.passwordHash);
+
+          let pinOk = false;
+          if (hasPin && isPinFormat(secret)) {
+            pinOk = await compare(secret, user.pinHash!);
+          }
+
+          if (pinOk) {
+            // PIN login success.
+          } else if (hasPassword) {
+            const passOk = await compare(secret, user.passwordHash!);
+            if (!passOk) return null;
           } else {
             return null;
           }

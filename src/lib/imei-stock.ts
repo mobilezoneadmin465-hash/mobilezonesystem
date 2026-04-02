@@ -2,6 +2,12 @@ import { Prisma } from "@prisma/client";
 
 type Tx = Prisma.TransactionClient;
 
+export const UNSPECIFIED_IMEI_PREFIX = "UNSPECIFIED_IMEI_";
+
+export function isUnspecifiedImei(imei: string) {
+  return imei.startsWith(UNSPECIFIED_IMEI_PREFIX);
+}
+
 export function normalizeImei(raw: string): string {
   return raw.replace(/\D/g, "").trim();
 }

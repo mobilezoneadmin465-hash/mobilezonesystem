@@ -32,16 +32,26 @@ export default async function OwnerShopDetailPage({ params }: Props) {
       take: 30,
       include: fullOrderInclude,
     }),
-    prisma.user.findMany({ where: { role: "SR" }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    prisma.user.findMany({ where: { role: "SR" }, orderBy: { name: "asc" } }),
     prisma.user.findMany({
       where: { shopId, role: "RETAIL" },
       orderBy: { name: "asc" },
-      select: { id: true, username: true, name: true },
     }),
   ]);
 
   const activeOrders = activeRaw.map(toShopOrderListDTO);
   const historyOrders = historyRaw.map(toShopOrderListDTO);
+
+  const salesRepsApproved = salesReps
+    .filter((sr) => Boolean((sr as unknown as { approvedAt: Date | null }).approvedAt))
+    .map((sr) => ({ id: sr.id, name: sr.name }));
+
+  const retailUsersForUI = retailUsers
+    .filter((u) => {
+      const approvedAt = (u as unknown as { approvedAt: Date | null }).approvedAt;
+      return Boolean(approvedAt);
+    })
+    .map((u) => ({ id: u.id, username: u.username, name: u.name }));
 
   return (
     <div className="space-y-8">
@@ -57,7 +67,7 @@ export default async function OwnerShopDetailPage({ params }: Props) {
 
       <OwnerShopCreditForm shop={toShopCreditDTO(shop)} due={Number(due)} />
 
-      <OwnerShopRetailLogins shopId={shopId} users={retailUsers} />
+      <OwnerShopRetailLogins users={retailUsersForUI} />
 
       <section className="space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -70,8 +80,8 @@ export default async function OwnerShopDetailPage({ params }: Props) {
           </Link>
         </div>
         <ul className="space-y-4">
-          {activeOrders.map((o) => (
-            <OwnerOrderCard key={o.id} mode="active" order={o} salesReps={salesReps} />
+            {activeOrders.map((o) => (
+              <OwnerOrderCard key={o.id} mode="active" order={o} salesReps={salesRepsApproved} />
           ))}
         </ul>
         {activeOrders.length === 0 ? <p className="text-sm text-zinc-500">{t("owner.shops.noActive")}</p> : null}
@@ -80,7 +90,7 @@ export default async function OwnerShopDetailPage({ params }: Props) {
           <h3 className="text-sm font-bold uppercase tracking-wide text-zinc-400">{t("owner.shops.recentPast")}</h3>
           <ul className="mt-3 space-y-4">
             {historyOrders.map((o) => (
-              <OwnerOrderCard key={o.id} mode="archive" order={o} salesReps={salesReps} />
+              <OwnerOrderCard key={o.id} mode="archive" order={o} salesReps={salesRepsApproved} />
             ))}
           </ul>
           {historyOrders.length === 0 ? (

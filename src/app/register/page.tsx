@@ -12,9 +12,6 @@ export default async function RegisterHubPage() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(20,184,166,0.1),transparent)]" />
       <div className="relative z-[1] mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-3">
         <h1 className="mb-4 text-center text-2xl font-bold tracking-tight text-white">Sign up</h1>
-        <Link href="/register/owner" className="app-btn py-4 text-center text-base">
-          Owner
-        </Link>
         <Link href="/register/sr" className="app-btn-secondary py-3.5 text-center text-sm">
           Field
         </Link>

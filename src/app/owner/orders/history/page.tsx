@@ -13,10 +13,13 @@ export default async function OwnerOrdersHistoryPage() {
       take: 200,
       include: fullOrderInclude,
     }),
-    prisma.user.findMany({ where: { role: "SR" }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    prisma.user.findMany({ where: { role: "SR" }, orderBy: { name: "asc" } }),
   ]);
 
   const orders = ordersRaw.map(toShopOrderListDTO);
+  const salesRepsApproved = salesReps
+    .filter((sr) => Boolean((sr as unknown as { approvedAt: Date | null }).approvedAt))
+    .map((sr) => ({ id: sr.id, name: sr.name }));
 
   return (
     <div className="space-y-6">
@@ -28,7 +31,7 @@ export default async function OwnerOrdersHistoryPage() {
       </div>
       <ul className="space-y-4">
         {orders.map((o) => (
-          <OwnerOrderCard key={o.id} mode="archive" order={o} salesReps={salesReps} />
+          <OwnerOrderCard key={o.id} mode="archive" order={o} salesReps={salesRepsApproved} />
         ))}
       </ul>
       {orders.length === 0 ? <p className="text-sm text-zinc-500">{t("owner.orders.noHistory")}</p> : null}

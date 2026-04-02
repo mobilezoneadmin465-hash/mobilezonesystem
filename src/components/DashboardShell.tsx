@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useLanguage } from "@/components/LanguageContext";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { NavTabIcon } from "@/components/mobile-nav-icons";
@@ -39,7 +40,20 @@ export function DashboardShell({
   const { t, navLabel } = useLanguage();
   const title = t(titleKey);
   const isApp = theme === "app";
-  /** Mobile app: fill dynamic viewport + clip so only main scrolls; tab bar stays docked (no fixed + bounce). */
+  const [online, setOnline] = useState(true);
+
+  useEffect(() => {
+    setOnline(typeof navigator !== "undefined" ? navigator.onLine : true);
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
+  /** Mobile app: fill dynamic viewport + clip so only main scrolls; tab bar stays docked. */
   const shell = isApp
     ? "flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden bg-zinc-950 text-zinc-100 md:h-auto md:max-h-none md:min-h-screen md:overflow-visible"
     : "min-h-screen bg-slate-50 text-slate-900";
@@ -55,7 +69,7 @@ export function DashboardShell({
   const activeTab = isApp ? activeNavHref(pathname, nav) : null;
 
   /** Main scroll area padding; tab bar is in layout flow on mobile (no extra spacer). */
-  const mainPadApp = "px-4 pt-4 pb-5 md:p-8 md:pb-8";
+  const mainPadApp = "px-4 pt-4 pb-24 md:p-8 md:pb-8";
   const mainPadLight = "p-4 md:p-8";
   const mainPad = isApp ? mainPadApp : mainPadLight;
 
@@ -138,11 +152,18 @@ export function DashboardShell({
             </div>
           ) : null}
 
-          <main className={mainScroll}>{children}</main>
+          <main className={mainScroll}>
+            {isApp && !online ? (
+              <div className="mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                Offline mode: actions may fail until connection returns.
+              </div>
+            ) : null}
+            {children}
+          </main>
 
           {isApp ? (
             <nav
-              className="mobile-bottom-nav z-40 shrink-0 border-t border-zinc-800 bg-zinc-950 shadow-[0_-6px_28px_rgba(0,0,0,0.55)] md:hidden"
+              className="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-60 shrink-0 border-t border-zinc-800 bg-zinc-950 shadow-[0_-6px_28px_rgba(0,0,0,0.55)] md:hidden"
               aria-label="Main"
             >
               <div

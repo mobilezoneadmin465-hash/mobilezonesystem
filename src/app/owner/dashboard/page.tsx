@@ -62,6 +62,11 @@ export default async function OwnerDashboardPage() {
     }),
   ]);
 
+  const approvedSrs = srs.filter((sr) => {
+    const approvedAt = (sr as unknown as { approvedAt: Date | null }).approvedAt;
+    return Boolean(approvedAt);
+  });
+
   let warehouseValue = new Prisma.Decimal(0);
   for (const p of products) {
     warehouseValue = warehouseValue.add(lineTotal(p.warehouseQty, p.unitPrice));
@@ -73,7 +78,7 @@ export default async function OwnerDashboardPage() {
   }
 
   let onRepsValue = new Prisma.Decimal(0);
-  for (const sr of srs) {
+  for (const sr of approvedSrs) {
     for (const row of sr.srInventory) {
       onRepsValue = onRepsValue.add(lineTotal(row.quantity, row.product.unitPrice));
     }
@@ -103,7 +108,7 @@ export default async function OwnerDashboardPage() {
     };
   });
 
-  const salesRepsDetail = srs.map((sr) => {
+  const salesRepsDetail = approvedSrs.map((sr) => {
     let total = new Prisma.Decimal(0);
     const lines = sr.srInventory.map((row) => {
       const lt = lineTotal(row.quantity, row.product.unitPrice);

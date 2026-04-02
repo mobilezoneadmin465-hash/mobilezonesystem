@@ -30,7 +30,12 @@ export default async function OwnerTeamPage() {
     cashRows.filter((r) => r.collectedBySRId).map((r) => [r.collectedBySRId as string, r._sum.amount]),
   );
 
-  const initialSrs: TeamSrRow[] = srs.map((sr) => {
+  const approvedSrs = srs.filter((sr) => {
+    const approvedAt = (sr as unknown as { approvedAt: Date | null }).approvedAt;
+    return Boolean(approvedAt);
+  });
+
+  const initialSrs: TeamSrRow[] = approvedSrs.map((sr) => {
     let onHand = new Prisma.Decimal(0);
     for (const row of sr.srInventory) {
       onHand = onHand.add(new Prisma.Decimal(row.product.unitPrice).mul(row.quantity));

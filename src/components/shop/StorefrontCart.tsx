@@ -47,6 +47,21 @@ export function StorefrontCart({ products, mode, shops = [], initialShopId = "" 
     setDraftQty(inCart > 0 ? inCart : 1);
   }, [picker, cart]);
 
+  // Prevent background scroll / bounce when fixed modals/sheets are open.
+  useEffect(() => {
+    const anyOverlay = Boolean(picker || cartOpen);
+    if (!anyOverlay) return;
+
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+    };
+  }, [picker, cartOpen]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return products;
@@ -255,7 +270,7 @@ export function StorefrontCart({ products, mode, shops = [], initialShopId = "" 
   );
 
   return (
-    <div className="pb-6">
+    <div className="pb-6 md:pb-6">
       {mode === "owner" && shops.length > 0 ? (
         <div className="app-card mb-4">
           <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">{t("retail.cart.store")}</label>
@@ -329,7 +344,12 @@ export function StorefrontCart({ products, mode, shops = [], initialShopId = "" 
 
       {/* Quantity modal: large +/− and typed amount */}
       {picker ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="qty-modal-title">
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center pb-[96px] sm:items-center sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="qty-modal-title"
+        >
           <button
             type="button"
             className="absolute inset-0 bg-black/70"
@@ -399,7 +419,7 @@ export function StorefrontCart({ products, mode, shops = [], initialShopId = "" 
           />
           <div
             id="cart-panel-title"
-            className="absolute inset-0 flex flex-col justify-end sm:flex-row sm:items-stretch sm:justify-end"
+            className="absolute inset-0 flex flex-col justify-end pb-[96px] sm:flex-row sm:pb-0 sm:items-stretch sm:justify-end"
           >
             <div className="flex h-[min(92vh,720px)] w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-zinc-800 bg-zinc-950 shadow-2xl sm:h-full sm:rounded-none sm:border-y-0 sm:border-l sm:border-r-0">
               {CartPanel}

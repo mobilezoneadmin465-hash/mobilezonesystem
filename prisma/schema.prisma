@@ -32,6 +32,9 @@ model User {
   fieldRoleId  String?
   fieldRole    FieldRole? @relation(fields: [fieldRoleId], references: [id], onDelete: SetNull)
   bio          String?
+  /// When present, this non-owner account is approved by the owner.
+  /// Used to gate SR/RETAIL app access until the owner approves.
+  approvedAt   DateTime?
   createdAt    DateTime @default(now())
 
   shop              Shop?            @relation(fields: [shopId], references: [id])

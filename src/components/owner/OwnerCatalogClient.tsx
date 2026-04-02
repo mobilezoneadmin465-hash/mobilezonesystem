@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { BrandDTO, OwnerCatalogProductDTO } from "@/lib/catalog-dto";
 import { createBrandAction, deleteBrandAction } from "@/server/actions/brand";
@@ -77,6 +78,9 @@ export function OwnerCatalogClient({ initial, brands }: Props) {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
+          <Link href="/owner/catalog/ledger" className="app-btn-secondary py-2.5 text-sm">
+            IMEI ledger
+          </Link>
           <button type="button" onClick={() => setBrandsOpen(true)} className="app-btn-secondary py-2.5 text-sm">
             Brands
           </button>
@@ -154,7 +158,7 @@ function BrandsModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true">
+      <div className="fixed inset-0 z-50 flex items-end justify-center pb-[96px] sm:items-center sm:p-4" role="dialog" aria-modal="true">
       <button type="button" className="absolute inset-0 bg-black/70" aria-label="Close" onClick={onClose} />
       <div className="relative flex max-h-[min(88vh,640px)] w-full max-w-md flex-col rounded-t-2xl border border-zinc-700 bg-zinc-900 shadow-2xl sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
@@ -241,7 +245,7 @@ function AddProductModal({
   const [pending, start] = useTransition();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 flex items-end justify-center pb-[96px] sm:items-center sm:p-4" role="dialog" aria-modal="true">
       <button type="button" className="absolute inset-0 bg-black/70" aria-label="Close" onClick={onClose} />
       <div className="relative flex max-h-[min(92vh,720px)] w-full max-w-md flex-col rounded-t-2xl border border-zinc-700 bg-zinc-900 shadow-2xl sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
@@ -397,7 +401,7 @@ function EditProductModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 flex items-end justify-center pb-[96px] sm:items-center sm:p-4" role="dialog" aria-modal="true">
       <button type="button" className="absolute inset-0 bg-black/70" aria-label="Close" onClick={onClose} />
       <div className="relative flex max-h-[min(92vh,720px)] w-full max-w-md flex-col rounded-t-2xl border border-zinc-700 bg-zinc-900 shadow-2xl sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
@@ -473,9 +477,23 @@ function AddStockModal({
   const [mode, setMode] = useState<"scanner" | "camera" | "manual">("scanner");
   const [input, setInput] = useState("");
   const [list, setList] = useState<string[]>([]);
+  const [quantity, setQuantity] = useState<string>("");
   const [err, setErr] = useState<string | null>(null);
   const [cameraStatus, setCameraStatus] = useState<string>("Ready");
   const [pending, start] = useTransition();
+
+  // Lock background scroll while this bottom-sheet modal is open.
+  useEffect(() => {
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+    };
+  }, []);
+
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number | null>(null);
@@ -645,13 +663,34 @@ function AddStockModal({
   }, [addOne, mode]);
 
   function submitAll() {
-    if (!list.length) {
-      setErr("Scan at least one IMEI.");
+    const rawQuantity = quantity.trim();
+    let qty: number | null = null;
+    if (rawQuantity) {
+      const n = Number(rawQuantity);
+      if (!Number.isFinite(n) || n < 1 || !Number.isInteger(n)) {
+        setErr("Invalid quantity.");
+        return;
+      }
+      qty = n;
+    }
+
+    if (!qty) {
+      if (!list.length) {
+        setErr("Add at least one IMEI or specify quantity.");
+        return;
+      }
+      qty = list.length;
+    }
+
+    if (list.length > qty) {
+      setErr("IMEI count cannot exceed quantity.");
       return;
     }
+
     const fd = new FormData();
     fd.set("productId", product.id);
     fd.set("imeis", list.join("\n"));
+    fd.set("quantity", String(qty));
     setErr(null);
     start(async () => {
       const r = await addProductStockAction(fd);
@@ -661,7 +700,7 @@ function AddStockModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 flex items-end justify-center pb-[96px] sm:items-center sm:p-4" role="dialog" aria-modal="true">
       <button type="button" className="absolute inset-0 bg-black/70" aria-label="Close" onClick={onClose} />
       <div className="relative flex max-h-[min(92vh,720px)] w-full max-w-lg flex-col rounded-t-2xl border border-zinc-700 bg-zinc-900 shadow-2xl sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
@@ -769,10 +808,27 @@ function AddStockModal({
 
           <div className="mt-5 rounded-xl border border-zinc-800 bg-zinc-950/70 p-3">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-medium text-white">Count</p>
+              <p className="text-sm font-medium text-white">Scanned IMEIs</p>
               <p className="text-2xl font-semibold text-teal-300">{list.length}</p>
             </div>
           </div>
+
+          <label className="mt-4 block text-xs text-zinc-500">
+            Units to add (optional)
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              className="app-input mt-1"
+              placeholder={list.length ? `e.g. ${list.length}` : "e.g. 5"}
+            />
+            <span className="mt-1 block text-[11px] text-zinc-500">
+              Leave blank to add exactly the scanned IMEIs. If no IMEIs are scanned, placeholders will be created as{" "}
+              &quot;unspecified imei&quot; in the ledger.
+            </span>
+          </label>
 
           <ul className="mt-4 max-h-60 space-y-2 overflow-y-auto">
             {list.map((imei) => (

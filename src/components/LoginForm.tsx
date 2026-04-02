@@ -134,6 +134,24 @@ export function LoginForm() {
             <span className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
               {authType === "pin" ? t("login.pinLabel") : t("login.passwordLabel")}
             </span>
+            {authType === "pin" ? (
+              <button
+                type="button"
+                onClick={() => setAuthType("password")}
+                className="mb-2 text-xs font-medium text-teal-400 hover:text-teal-300"
+              >
+                Use password instead
+              </button>
+            ) : null}
+            {authType === "password" ? (
+              <button
+                type="button"
+                onClick={() => setAuthType("pin")}
+                className="mb-2 text-xs font-medium text-teal-400 hover:text-teal-300"
+              >
+                Use PIN instead
+              </button>
+            ) : null}
             <input
               type="password"
               value={secret}
